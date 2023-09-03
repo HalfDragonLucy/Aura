@@ -28,8 +28,6 @@ The program is structured into several components:
 - **DirectX Image Conversion (`AuraDDX.DirectX`)**: Provides functionality for converting images to the PNG format using the `texconv.exe` utility.
 - **Viewer Application (`AuraDDX.Viewer`)**: The main Windows Forms application responsible for viewing DDX images and managing file extensions.
 
-## Documentation
-
 ### Installation
 
 1. Make sure you have [.NET 6](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
@@ -41,7 +39,6 @@ The program is structured into several components:
 ### Usage
 
 The AuraDDX Viewer can be used both from the command line or by simply opening a DDX file.
-
 
 Replace `<path_to_ddx_image>` with the path to the DDX image file you want to view.
 
