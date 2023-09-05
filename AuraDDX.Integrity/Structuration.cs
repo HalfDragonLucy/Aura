@@ -74,8 +74,11 @@ namespace AuraDDX.Integrity
         {
             try
             {
-                Directory.CreateDirectory(directoryPath);
-                logger.LogInformation($"Created directory: {directoryPath}");
+                if (!Directory.Exists(directoryPath))
+                {
+                    Directory.CreateDirectory(directoryPath);
+                    logger.LogInformation($"Created directory: {directoryPath}");
+                }
             }
             catch (Exception ex)
             {
