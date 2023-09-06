@@ -29,7 +29,7 @@ namespace AuraDDX.Viewer
         {
             if (args.Length > 1)
             {
-                ParseImage(args[2]);
+                ProcessAndDisplayImage(args[2]);
                 return;
             }
         }
@@ -67,30 +67,30 @@ namespace AuraDDX.Viewer
         }
 
         /// <summary>
-        /// Parses and processes an image file.
+        /// Parses and processes an image file, converting it if the extension is ".ddx".
         /// </summary>
-        /// <param name="path">The path to the image file.</param>
-        private void ParseImage(string path)
+        /// <param name="imageFilePath">The path to the image file.</param>
+        private async void ProcessAndDisplayImage(string imageFilePath)
         {
-            if (!IsValidPicturePath(path))
+            if (!IsValidPicturePath(imageFilePath))
             {
                 logger.LogError($"Invalid picture path provided. Code: {ExitCodes.InvalidArgument}");
                 Environment.Exit(ExitCodes.InvalidArgument);
                 throw new Exception("Please provide a valid .ddx or .png picture path argument.");
             }
 
-            logger.LogInformation($"Converting image at path: {path}");
+            logger.LogInformation($"Converting image at path: {imageFilePath}");
 
-            string extension = Path.GetExtension(path).ToLower();
+            string extension = Path.GetExtension(imageFilePath).ToLower();
 
             switch (extension)
             {
                 case ".ddx":
-                    ConvertImage(path);
+                    await ConvertAndDisplayImageAsync(imageFilePath);
                     logger.LogInformation("Image conversion completed successfully.");
                     break;
                 case ".png":
-                    Image img = Image.FromFile(path);
+                    Image img = Image.FromFile(imageFilePath);
                     DisplayImage(img);
                     logger.LogInformation("Image conversion skipped because the extension is not .ddx.");
                     break;
@@ -120,30 +120,34 @@ namespace AuraDDX.Viewer
         }
 
         /// <summary>
-        /// Converts an image file to a different format and displays it.
+        /// Converts an image file to a different format and displays it if it's a .ddx file.
         /// </summary>
-        /// <param name="picturePath">The path to the image file.</param>
-        private async void ConvertImage(string picturePath)
+        /// <param name="imageFilePath">The path to the image file.</param>
+        private async Task ConvertAndDisplayImageAsync(string imageFilePath)
         {
             try
             {
-                logger.LogInformation($"Converting and displaying the image: {picturePath}");
+                logger.LogInformation($"Converting and displaying the image: {imageFilePath}");
                 logger.LogInformation($"Output directory: {Structuration.TempPath}");
 
-                string extension = Path.GetExtension(picturePath).ToLower();
+                string extension = Path.GetExtension(imageFilePath).ToLower();
 
                 switch (extension)
                 {
                     case ".ddx":
                         logger.LogInformation($"Target format: {FileFormat.PNG}");
-                        await texConv.ConvertToAsync(picturePath, Structuration.TempPath, FileFormat.PNG);
 
-                        string targetFilePath = Path.Combine(Structuration.TempPath, $"{Path.GetFileNameWithoutExtension(picturePath)}.{FileFormat.PNG}");
-                        logger.LogInformation($"Target file path: {targetFilePath}");
+                        await Task.Run(async () =>
+                        {
+                            await texConv.ConvertToAsync(imageFilePath, Structuration.TempPath, FileFormat.PNG);
 
-                        loadedImage = Image.FromFile(targetFilePath);
+                            string targetFilePath = Path.Combine(Structuration.TempPath, $"{Path.GetFileNameWithoutExtension(imageFilePath)}.{FileFormat.PNG}");
+                            logger.LogInformation($"Target file path: {targetFilePath}");
 
-                        DisplayImage(loadedImage);
+                            loadedImage = Image.FromFile(targetFilePath);
+
+                            DisplayImage(loadedImage);
+                        });
                         break;
                     default:
                         logger.LogError("Invalid picture extension. Code: " + ExitCodes.InvalidArgument);
@@ -177,13 +181,13 @@ namespace AuraDDX.Viewer
         private void Viewer_FormClosed(object sender, FormClosedEventArgs e)
         {
             logger.LogInformation("Viewer form closed.");
-            GarbageCollection();
+            PerformGarbageCollection();
         }
 
         /// <summary>
         /// Performs garbage collection and deletes temporary files.
         /// </summary>
-        public void GarbageCollection()
+        public void PerformGarbageCollection()
         {
             logger.LogInformation("Deleting .png files in 'temp' directory...");
 
@@ -250,12 +254,13 @@ namespace AuraDDX.Viewer
             switch (OpenNewFile.ShowDialog())
             {
                 case DialogResult.OK:
-                    GarbageCollection();
-                    ParseImage(OpenNewFile.FileName);
+                    PerformGarbageCollection();
+                    ProcessAndDisplayImage(OpenNewFile.FileName);
                     break;
             }
 
             OpenNewFile?.Dispose();
         }
+
     }
 }
