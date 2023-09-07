@@ -29,68 +29,17 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Viewer));
-            ViewerMenu = new MenuStrip();
-            FileMenu = new ToolStripMenuItem();
-            FileMenuOpen = new ToolStripMenuItem();
-            ExtensionMenu = new ToolStripMenuItem();
-            ExtensionMenuRegister = new ToolStripMenuItem();
-            ExtensionMenuUnregister = new ToolStripMenuItem();
             OpenNewFile = new OpenFileDialog();
-            ViewerMenu.SuspendLayout();
+            Menu = new ToolStrip();
+            toolStripDropDownButton1 = new ToolStripDropDownButton();
+            openToolStripMenuItem = new ToolStripMenuItem();
+            toolStripDropDownButton2 = new ToolStripDropDownButton();
+            registerddxToolStripMenuItem = new ToolStripMenuItem();
+            unregisterddxToolStripMenuItem = new ToolStripMenuItem();
+            BtnUpdate = new ToolStripButton();
+            CurrentVersion = new ToolStripLabel();
+            Menu.SuspendLayout();
             SuspendLayout();
-            // 
-            // ViewerMenu
-            // 
-            ViewerMenu.BackgroundImageLayout = ImageLayout.None;
-            ViewerMenu.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point);
-            ViewerMenu.Items.AddRange(new ToolStripItem[] { FileMenu, ExtensionMenu });
-            ViewerMenu.Location = new Point(0, 0);
-            ViewerMenu.Name = "ViewerMenu";
-            ViewerMenu.Size = new Size(1264, 29);
-            ViewerMenu.TabIndex = 0;
-            ViewerMenu.Text = "menuStrip1";
-            // 
-            // FileMenu
-            // 
-            FileMenu.BackgroundImageLayout = ImageLayout.None;
-            FileMenu.DropDownItems.AddRange(new ToolStripItem[] { FileMenuOpen });
-            FileMenu.Image = Properties.Resources.Document;
-            FileMenu.Name = "FileMenu";
-            FileMenu.Size = new Size(62, 25);
-            FileMenu.Text = "File";
-            // 
-            // FileMenuOpen
-            // 
-            FileMenuOpen.BackgroundImageLayout = ImageLayout.None;
-            FileMenuOpen.Image = Properties.Resources.OpenFile;
-            FileMenuOpen.Name = "FileMenuOpen";
-            FileMenuOpen.Size = new Size(118, 26);
-            FileMenuOpen.Text = "Open";
-            FileMenuOpen.Click += OpenFile;
-            // 
-            // ExtensionMenu
-            // 
-            ExtensionMenu.DropDownItems.AddRange(new ToolStripItem[] { ExtensionMenuRegister, ExtensionMenuUnregister });
-            ExtensionMenu.Image = Properties.Resources.IconFile;
-            ExtensionMenu.Name = "ExtensionMenu";
-            ExtensionMenu.Size = new Size(104, 25);
-            ExtensionMenu.Text = "Extension";
-            // 
-            // ExtensionMenuRegister
-            // 
-            ExtensionMenuRegister.Image = Properties.Resources.DocumentOK;
-            ExtensionMenuRegister.Name = "ExtensionMenuRegister";
-            ExtensionMenuRegister.Size = new Size(221, 26);
-            ExtensionMenuRegister.Text = "Register AuraDDX";
-            ExtensionMenuRegister.Click += RegisterAndExit;
-            // 
-            // ExtensionMenuUnregister
-            // 
-            ExtensionMenuUnregister.Image = Properties.Resources.DocumentError;
-            ExtensionMenuUnregister.Name = "ExtensionMenuUnregister";
-            ExtensionMenuUnregister.Size = new Size(221, 26);
-            ExtensionMenuUnregister.Text = "Unregister AuraDDX";
-            ExtensionMenuUnregister.Click += UnregisterAndExit;
             // 
             // OpenNewFile
             // 
@@ -98,35 +47,113 @@
             OpenNewFile.Filter = "DDX Files (*.ddx)|*.ddx|PNG Files (*.png)|*.png";
             OpenNewFile.RestoreDirectory = true;
             // 
+            // Menu
+            // 
+            Menu.BackgroundImageLayout = ImageLayout.None;
+            Menu.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point);
+            Menu.GripStyle = ToolStripGripStyle.Hidden;
+            Menu.Items.AddRange(new ToolStripItem[] { toolStripDropDownButton1, toolStripDropDownButton2, BtnUpdate, CurrentVersion });
+            Menu.Location = new Point(0, 0);
+            Menu.Name = "Menu";
+            Menu.Size = new Size(1264, 25);
+            Menu.TabIndex = 1;
+            // 
+            // toolStripDropDownButton1
+            // 
+            toolStripDropDownButton1.BackgroundImageLayout = ImageLayout.None;
+            toolStripDropDownButton1.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            toolStripDropDownButton1.DropDownItems.AddRange(new ToolStripItem[] { openToolStripMenuItem });
+            toolStripDropDownButton1.Image = Properties.Resources.Document;
+            toolStripDropDownButton1.ImageTransparentColor = Color.Magenta;
+            toolStripDropDownButton1.Name = "toolStripDropDownButton1";
+            toolStripDropDownButton1.Size = new Size(29, 22);
+            // 
+            // openToolStripMenuItem
+            // 
+            openToolStripMenuItem.Image = Properties.Resources.OpenFile;
+            openToolStripMenuItem.Name = "openToolStripMenuItem";
+            openToolStripMenuItem.Size = new Size(118, 26);
+            openToolStripMenuItem.Text = "Open";
+            openToolStripMenuItem.Click += OpenFile;
+            // 
+            // toolStripDropDownButton2
+            // 
+            toolStripDropDownButton2.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            toolStripDropDownButton2.DropDownItems.AddRange(new ToolStripItem[] { registerddxToolStripMenuItem, unregisterddxToolStripMenuItem });
+            toolStripDropDownButton2.Image = Properties.Resources.IconFile;
+            toolStripDropDownButton2.ImageTransparentColor = Color.Magenta;
+            toolStripDropDownButton2.Name = "toolStripDropDownButton2";
+            toolStripDropDownButton2.Size = new Size(29, 22);
+            // 
+            // registerddxToolStripMenuItem
+            // 
+            registerddxToolStripMenuItem.BackgroundImageLayout = ImageLayout.None;
+            registerddxToolStripMenuItem.Image = Properties.Resources.DocumentOK;
+            registerddxToolStripMenuItem.Name = "registerddxToolStripMenuItem";
+            registerddxToolStripMenuItem.Size = new Size(192, 26);
+            registerddxToolStripMenuItem.Text = "Register *.ddx";
+            registerddxToolStripMenuItem.Click += RegisterAndExit;
+            // 
+            // unregisterddxToolStripMenuItem
+            // 
+            unregisterddxToolStripMenuItem.BackgroundImageLayout = ImageLayout.None;
+            unregisterddxToolStripMenuItem.Image = Properties.Resources.DocumentError;
+            unregisterddxToolStripMenuItem.Name = "unregisterddxToolStripMenuItem";
+            unregisterddxToolStripMenuItem.Size = new Size(192, 26);
+            unregisterddxToolStripMenuItem.Text = "Unregister *.ddx";
+            unregisterddxToolStripMenuItem.Click += UnregisterAndExit;
+            // 
+            // BtnUpdate
+            // 
+            BtnUpdate.Alignment = ToolStripItemAlignment.Right;
+            BtnUpdate.BackgroundImageLayout = ImageLayout.None;
+            BtnUpdate.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            BtnUpdate.Image = Properties.Resources.UpdateScript;
+            BtnUpdate.ImageTransparentColor = Color.Magenta;
+            BtnUpdate.Name = "BtnUpdate";
+            BtnUpdate.Size = new Size(23, 22);
+            BtnUpdate.Visible = false;
+            BtnUpdate.Click += UpdateProgram;
+            // 
+            // CurrentVersion
+            // 
+            CurrentVersion.Alignment = ToolStripItemAlignment.Right;
+            CurrentVersion.BackgroundImageLayout = ImageLayout.None;
+            CurrentVersion.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            CurrentVersion.Enabled = false;
+            CurrentVersion.Name = "CurrentVersion";
+            CurrentVersion.Size = new Size(62, 22);
+            CurrentVersion.Text = "Version";
+            // 
             // Viewer
             // 
             AutoScaleDimensions = new SizeF(9F, 21F);
             AutoScaleMode = AutoScaleMode.Font;
             BackgroundImageLayout = ImageLayout.Zoom;
             ClientSize = new Size(1264, 681);
-            Controls.Add(ViewerMenu);
+            Controls.Add(Menu);
             DoubleBuffered = true;
             Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point);
             Icon = (Icon)resources.GetObject("$this.Icon");
-            MainMenuStrip = ViewerMenu;
             Margin = new Padding(4);
             Name = "Viewer";
             Text = "AuraDDX: Viewer";
             FormClosed += Viewer_FormClosed;
-            ViewerMenu.ResumeLayout(false);
-            ViewerMenu.PerformLayout();
+            Menu.ResumeLayout(false);
+            Menu.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
 
         #endregion
-
-        private MenuStrip ViewerMenu;
-        private ToolStripMenuItem FileMenu;
-        private ToolStripMenuItem FileMenuOpen;
         private OpenFileDialog OpenNewFile;
-        private ToolStripMenuItem ExtensionMenu;
-        private ToolStripMenuItem ExtensionMenuRegister;
-        private ToolStripMenuItem ExtensionMenuUnregister;
+        private ToolStrip Menu;
+        private ToolStripDropDownButton toolStripDropDownButton1;
+        private ToolStripMenuItem openToolStripMenuItem;
+        private ToolStripDropDownButton toolStripDropDownButton2;
+        private ToolStripMenuItem registerddxToolStripMenuItem;
+        private ToolStripMenuItem unregisterddxToolStripMenuItem;
+        private ToolStripLabel CurrentVersion;
+        private ToolStripButton BtnUpdate;
     }
 }

@@ -10,6 +10,9 @@ namespace AuraDDX.Viewer
     /// </summary>
     public partial class Viewer : Form
     {
+        private const string owner = "HalfDragonLucy";
+        private const string repo = "AuraDDX";
+
         private static readonly IExtensionManager extensionManager = new ExtensionManager();
         private static readonly ITexConv texConv = new TexConv(Structuration.TexConvPath);
         private readonly ILogging logger = new Logging("AuraDDX", Structuration.LogsPath);
@@ -19,11 +22,32 @@ namespace AuraDDX.Viewer
         {
             InitializeComponent();
 
-            texConv.ErrorOccurred += (sender, errorMessage) =>
+            CurrentVersion.Text = $"Version: {Application.ProductVersion}";
+
+            Task.Run(async () =>
             {
-                logger.LogError(errorMessage);
-                throw new Exception(errorMessage);
-            };
+                logger.LogInformation($"Current Version: {Application.ProductVersion}");
+                string latestRelease = await Structuration.CheckForNewReleaseAsync(owner, repo);
+                logger.LogInformation($"Latest Version: {latestRelease}");
+
+                if (latestRelease == Application.ProductVersion)
+                {
+                    BtnUpdate.Visible = false;
+                    logger.LogInformation($"No Update Available.");
+                }
+                else
+                {
+                    BtnUpdate.Visible = true;
+                    logger.LogInformation($"Update Available!");
+                }
+
+            }).Wait();
+
+            texConv.ErrorOccurred += (sender, errorMessage) =>
+        {
+            logger.LogError(errorMessage);
+            throw new Exception(errorMessage);
+        };
 
             Structuration.ErrorOccurred += (sender, errorMessage) =>
             {
@@ -281,5 +305,9 @@ namespace AuraDDX.Viewer
             OpenNewFile?.Dispose();
         }
 
+        private async void UpdateProgram(object sender, EventArgs e)
+        {
+            await Structuration.DownloadAndExecuteLatestReleaseAsync(owner, repo, "setup.exe");
+        }
     }
 }
