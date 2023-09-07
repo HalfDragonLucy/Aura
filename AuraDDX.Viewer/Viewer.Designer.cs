@@ -33,9 +33,6 @@
             Menu = new ToolStrip();
             toolStripDropDownButton1 = new ToolStripDropDownButton();
             openToolStripMenuItem = new ToolStripMenuItem();
-            toolStripDropDownButton2 = new ToolStripDropDownButton();
-            registerddxToolStripMenuItem = new ToolStripMenuItem();
-            unregisterddxToolStripMenuItem = new ToolStripMenuItem();
             BtnUpdate = new ToolStripButton();
             CurrentVersion = new ToolStripLabel();
             Menu.SuspendLayout();
@@ -52,7 +49,7 @@
             Menu.BackgroundImageLayout = ImageLayout.None;
             Menu.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point);
             Menu.GripStyle = ToolStripGripStyle.Hidden;
-            Menu.Items.AddRange(new ToolStripItem[] { toolStripDropDownButton1, toolStripDropDownButton2, BtnUpdate, CurrentVersion });
+            Menu.Items.AddRange(new ToolStripItem[] { toolStripDropDownButton1, BtnUpdate, CurrentVersion });
             Menu.Location = new Point(0, 0);
             Menu.Name = "Menu";
             Menu.Size = new Size(1264, 25);
@@ -72,36 +69,9 @@
             // 
             openToolStripMenuItem.Image = Properties.Resources.OpenFile;
             openToolStripMenuItem.Name = "openToolStripMenuItem";
-            openToolStripMenuItem.Size = new Size(118, 26);
+            openToolStripMenuItem.Size = new Size(180, 26);
             openToolStripMenuItem.Text = "Open";
             openToolStripMenuItem.Click += OpenFile;
-            // 
-            // toolStripDropDownButton2
-            // 
-            toolStripDropDownButton2.DisplayStyle = ToolStripItemDisplayStyle.Image;
-            toolStripDropDownButton2.DropDownItems.AddRange(new ToolStripItem[] { registerddxToolStripMenuItem, unregisterddxToolStripMenuItem });
-            toolStripDropDownButton2.Image = Properties.Resources.IconFile;
-            toolStripDropDownButton2.ImageTransparentColor = Color.Magenta;
-            toolStripDropDownButton2.Name = "toolStripDropDownButton2";
-            toolStripDropDownButton2.Size = new Size(29, 22);
-            // 
-            // registerddxToolStripMenuItem
-            // 
-            registerddxToolStripMenuItem.BackgroundImageLayout = ImageLayout.None;
-            registerddxToolStripMenuItem.Image = Properties.Resources.DocumentOK;
-            registerddxToolStripMenuItem.Name = "registerddxToolStripMenuItem";
-            registerddxToolStripMenuItem.Size = new Size(192, 26);
-            registerddxToolStripMenuItem.Text = "Register *.ddx";
-            registerddxToolStripMenuItem.Click += RegisterAndExit;
-            // 
-            // unregisterddxToolStripMenuItem
-            // 
-            unregisterddxToolStripMenuItem.BackgroundImageLayout = ImageLayout.None;
-            unregisterddxToolStripMenuItem.Image = Properties.Resources.DocumentError;
-            unregisterddxToolStripMenuItem.Name = "unregisterddxToolStripMenuItem";
-            unregisterddxToolStripMenuItem.Size = new Size(192, 26);
-            unregisterddxToolStripMenuItem.Text = "Unregister *.ddx";
-            unregisterddxToolStripMenuItem.Click += UnregisterAndExit;
             // 
             // BtnUpdate
             // 
@@ -150,9 +120,6 @@
         private ToolStrip Menu;
         private ToolStripDropDownButton toolStripDropDownButton1;
         private ToolStripMenuItem openToolStripMenuItem;
-        private ToolStripDropDownButton toolStripDropDownButton2;
-        private ToolStripMenuItem registerddxToolStripMenuItem;
-        private ToolStripMenuItem unregisterddxToolStripMenuItem;
         private ToolStripLabel CurrentVersion;
         private ToolStripButton BtnUpdate;
     }

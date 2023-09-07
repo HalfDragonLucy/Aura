@@ -8,8 +8,7 @@ namespace AuraViewer
         static void Main()
         {
             ApplicationConfiguration.Initialize();
-            string[] commandLineArgs = Environment.GetCommandLineArgs();
-            Application.Run(new Viewer(commandLineArgs));
+            Application.Run(new Viewer());
         }
     }
 }

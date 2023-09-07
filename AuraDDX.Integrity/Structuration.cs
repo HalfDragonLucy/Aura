@@ -14,19 +14,9 @@ namespace AuraDDX.Integrity
         string BasePath { get; }
 
         /// <summary>
-        /// Gets the path to the 'bin' directory.
-        /// </summary>
-        string BinPath { get; }
-
-        /// <summary>
         /// Gets the path to the 'logs' directory.
         /// </summary>
         string LogsPath { get; }
-
-        /// <summary>
-        /// Gets the path to the 'texconv.exe' executable.
-        /// </summary>
-        string TexConvPath { get; }
 
         /// <summary>
         /// Gets the path to the 'temp' directory.
@@ -60,9 +50,7 @@ namespace AuraDDX.Integrity
     public static class Structuration
     {
         public static string BasePath { get; private set; }
-        public static string BinPath { get; private set; }
         public static string LogsPath { get; private set; }
-        public static string TexConvPath { get; private set; }
         public static string TempPath { get; private set; }
 
         private static readonly GitHubClient GitHubClient;
@@ -73,9 +61,7 @@ namespace AuraDDX.Integrity
         {
             GitHubClient = new GitHubClient(new ProductHeaderValue("AuraDDX"));
             BasePath = AppDomain.CurrentDomain.BaseDirectory;
-            BinPath = Path.Combine(BasePath, "bin");
             LogsPath = Path.Combine(BasePath, "logs");
-            TexConvPath = Path.Combine(BinPath, "texconv.exe");
             TempPath = Path.Combine(BasePath, "temp");
 
             Initialize();
@@ -84,12 +70,10 @@ namespace AuraDDX.Integrity
         /// <summary>
         /// Initializes the application's file structure.
         /// </summary>
-        private static void Initialize()
+        public static void Initialize()
         {
-            EnsureDirectoryExists(BinPath);
             EnsureDirectoryExists(LogsPath);
             EnsureDirectoryExists(TempPath);
-            EnsureTexConvExists();
         }
 
         private static void EnsureDirectoryExists(string directoryPath)
@@ -104,22 +88,6 @@ namespace AuraDDX.Integrity
             catch (Exception ex)
             {
                 ErrorOccurred?.Invoke(null, $"Error creating directory {directoryPath}: {ex.Message}");
-            }
-        }
-
-        private static void EnsureTexConvExists()
-        {
-            try
-            {
-                if (!File.Exists(TexConvPath))
-                {
-                    Environment.Exit(ExitCodes.MissingDependency);
-                    ErrorOccurred?.Invoke(null, $"Missing texconv.exe at {TexConvPath}");
-                }
-            }
-            catch (Exception ex)
-            {
-                ErrorOccurred?.Invoke(null, $"Error checking for texconv.exe: {ex.Message}");
             }
         }
 
@@ -195,6 +163,36 @@ namespace AuraDDX.Integrity
                 ErrorOccurred?.Invoke(null, $"Error checking for new release: {ex.Message}");
                 return string.Empty;
             }
+        }
+
+        /// <summary>
+        /// Helper function to check if one version is greater than the other.
+        /// </summary>
+        /// <param name="version1">The first version string.</param>
+        /// <param name="version2">The second version string.</param>
+        /// <returns>True if version1 is greater than version2; otherwise, false.</returns>
+        public static bool IsVersionGreaterThan(string version1, string version2)
+        {
+            string[] parts1 = version1.Split('.');
+            string[] parts2 = version2.Split('.');
+
+            if (parts1.Length != parts2.Length)
+            {
+                throw new ArgumentException("Version strings have different formats.");
+            }
+
+            for (int i = 0; i < parts1.Length; i++)
+            {
+                int part1 = int.Parse(parts1[i]);
+                int part2 = int.Parse(parts2[i]);
+
+                if (part1 != part2)
+                {
+                    return part1 > part2;
+                }
+            }
+
+            return false; // Versions are equal
         }
     }
 }

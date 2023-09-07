@@ -13,12 +13,11 @@ namespace AuraDDX.Viewer
         private const string owner = "HalfDragonLucy";
         private const string repo = "AuraDDX";
 
-        private static readonly IExtensionManager extensionManager = new ExtensionManager();
-        private static readonly ITexConv texConv = new TexConv(Structuration.TexConvPath);
+        private static readonly ITexConv texConv = new TexConv();
         private readonly ILogging logger = new Logging("AuraDDX", Structuration.LogsPath);
         private static Image? loadedImage;
 
-        public Viewer(string[] args)
+        public Viewer()
         {
             InitializeComponent();
 
@@ -35,7 +34,7 @@ namespace AuraDDX.Viewer
                     BtnUpdate.Visible = false;
                     logger.LogInformation($"No Update Available.");
                 }
-                else
+                else if (Structuration.IsVersionGreaterThan(latestRelease, Application.ProductVersion))
                 {
                     BtnUpdate.Visible = true;
                     logger.LogInformation($"Update Available!");
@@ -55,13 +54,7 @@ namespace AuraDDX.Viewer
                 throw new Exception(errorMessage);
             };
 
-            extensionManager.ErrorOccurred += (sender, errorMessage) =>
-            {
-                logger.LogError(errorMessage);
-                throw new Exception(errorMessage);
-            };
-
-            HandleArguments(args);
+            HandleArguments(Environment.GetCommandLineArgs());
         }
 
         /// <summary>
@@ -70,43 +63,20 @@ namespace AuraDDX.Viewer
         /// <param name="args">Command-line arguments.</param>
         private void HandleArguments(string[] args)
         {
-            if (args.Length > 1)
+            try
             {
-                ProcessAndDisplayImage(args[2]);
-                return;
+                if (args.Length > 0)
+                {
+                    ProcessAndDisplayImage(args[1]);
+                    return;
+                }
             }
-        }
+            catch (Exception ex)
+            {
+                logger.LogError(ex.Message);
+                logger.LogError(args.Length.ToString());
+            }
 
-        /// <summary>
-        /// Registers the application for a file extension.
-        /// </summary>
-        /// <param name="sender">The sender object.</param>
-        /// <param name="e">Event arguments.</param>
-        private void RegisterAndExit(object sender, EventArgs e)
-        {
-            logger.LogInformation("Registering application...");
-
-            logger.LogInformation("Registering file extension '.ddx' with the application.");
-            extensionManager.RegisterForFileExtension(".ddx", Path.Combine(Structuration.BasePath, "AuraDDXViewer.exe"));
-            logger.LogInformation("Registration completed successfully.");
-
-            MessageBox.Show("Registration completed successfully.", "Register AuraDDX", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
-
-        /// <summary>
-        /// Unregisters the application for a file extension.
-        /// </summary>
-        /// <param name="sender">The sender object.</param>
-        /// <param name="e">Event arguments.</param>
-        private void UnregisterAndExit(object sender, EventArgs e)
-        {
-            logger.LogInformation("Unregistering application...");
-
-            logger.LogInformation("Unregistering file extension '.ddx' from the application.");
-            extensionManager.UnregisterFileExtension(".ddx");
-            logger.LogInformation("Unregistration completed successfully.");
-
-            MessageBox.Show("Unregistration completed successfully.", "Unregister AuraDDX", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         /// <summary>

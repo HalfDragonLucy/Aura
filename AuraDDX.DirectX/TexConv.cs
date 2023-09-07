@@ -1,29 +1,27 @@
-﻿using System.Diagnostics;
+﻿using AuraDDX.Integrity;
+using System.Diagnostics;
 
 namespace AuraDDX.DirectX
 {
     /// <summary>
-    /// Provides functionality to convert texture files using the texconv.exe utility.
+    /// Provides functionality to convert files using an embedded texconv.exe.
     /// </summary>
     public interface ITexConv
     {
         /// <summary>
-        /// Converts a texture file to the specified format asynchronously.
-        /// </summary>
-        /// <param name="inputFilePath">The path to the input texture file.</param>
-        /// <param name="outputDirectory">The directory where the converted file will be saved.</param>
-        /// <param name="format">The desired output file format.</param>
-        Task ConvertToAsync(string inputFilePath, string outputDirectory, FileFormat format);
-
-        /// <summary>
-        /// Event raised when an error occurs during conversion.
+        /// Occurs when an error occurs during conversion.
         /// </summary>
         event EventHandler<string> ErrorOccurred;
+
+        /// <summary>
+        /// Converts a file asynchronously.
+        /// </summary>
+        /// <param name="inputFilePath">The input file path.</param>
+        /// <param name="outputDirectory">The output directory.</param>
+        /// <param name="format">The output file format.</param>
+        Task ConvertToAsync(string inputFilePath, string outputDirectory, FileFormat format);
     }
 
-    /// <summary>
-    /// Represents the supported file formats for texture conversion.
-    /// </summary>
     public enum FileFormat
     {
         BMP, DDS, DDX, HDR, JPG, JPEG, PFM, PNG, PPM, TGA, TIF, TIFF, WMP
@@ -31,23 +29,6 @@ namespace AuraDDX.DirectX
 
     public class TexConv : ITexConv
     {
-        private readonly string texConvPath;
-
-        public TexConv(string texConvPath)
-        {
-            if (string.IsNullOrEmpty(texConvPath))
-            {
-                throw new ArgumentException("The texConvPath cannot be null or empty.", nameof(texConvPath));
-            }
-
-            if (!File.Exists(texConvPath))
-            {
-                throw new FileNotFoundException("texconv.exe not found.", texConvPath);
-            }
-
-            this.texConvPath = texConvPath;
-        }
-
         public event EventHandler<string> ErrorOccurred = delegate { };
 
         public async Task ConvertToAsync(string inputFilePath, string outputDirectory, FileFormat format)
@@ -58,52 +39,44 @@ namespace AuraDDX.DirectX
                 throw new ArgumentException("Unsupported file format.", nameof(format));
             }
 
-            await Task.Run(() =>
+            string tempExePath = Path.Combine(Structuration.TempPath, "texconv.exe");
+
+            try
             {
-                using var texConv = new Process
+                await File.WriteAllBytesAsync(tempExePath, Properties.Resources.TexConvExec);
+
+                using var texConvProcess = new Process
                 {
                     StartInfo = new ProcessStartInfo
                     {
                         UseShellExecute = false,
-                        FileName = texConvPath,
                         RedirectStandardError = true,
                         WindowStyle = ProcessWindowStyle.Hidden,
                         CreateNoWindow = true,
+                        FileName = tempExePath,
                         Arguments = $"\"{inputFilePath}\" -ft {format.ToString().ToLower()} -y -o \"{outputDirectory}\""
                     }
                 };
 
-                texConv.Start();
-                texConv.WaitForExit();
+                texConvProcess.Start();
+                await texConvProcess.WaitForExitAsync();
 
-                if (texConv.ExitCode != 0)
+                if (texConvProcess.ExitCode != 0)
                 {
-                    string errorMessage = $"Failed to execute texconv.exe. Exit code: {texConv.ExitCode}. Error output: {texConv.StandardError.ReadToEnd()}";
+                    string errorMessage = $"Failed to execute texconv.exe. Exit code: {texConvProcess.ExitCode}. Error output: {await texConvProcess.StandardError.ReadToEndAsync()}";
                     OnErrorOccurred(errorMessage);
                     throw new InvalidOperationException(errorMessage);
                 }
-
-                if (!Directory.Exists(outputDirectory))
-                {
-                    string errorMessage = "Output file not created.";
-                    OnErrorOccurred(errorMessage);
-                    throw new FileNotFoundException(errorMessage, outputDirectory);
-                }
-            });
+            }
+            finally
+            {
+                File.Delete(tempExePath);
+            }
         }
 
-        /// <summary>
-        /// Checks if the specified file format is supported for conversion.
-        /// </summary>
-        /// <param name="format">The file format to check.</param>
-        /// <returns>True if the format is supported; otherwise, false.</returns>
         public static bool IsSupported(FileFormat format)
         {
-            return format switch
-            {
-                FileFormat.BMP or FileFormat.DDS or FileFormat.DDX or FileFormat.HDR or FileFormat.JPG or FileFormat.JPEG or FileFormat.PFM or FileFormat.PNG or FileFormat.PPM or FileFormat.TGA or FileFormat.TIF or FileFormat.TIFF or FileFormat.WMP => true,
-                _ => false,
-            };
+            return Enum.IsDefined(typeof(FileFormat), format);
         }
 
         private void OnErrorOccurred(string errorMessage)
