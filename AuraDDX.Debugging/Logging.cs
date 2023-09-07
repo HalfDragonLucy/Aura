@@ -24,12 +24,6 @@ namespace AuraDDX.Debugging
         /// </summary>
         /// <param name="message">The error message to log.</param>
         void LogError(string message);
-
-        /// <summary>
-        /// Logs an exception.
-        /// </summary>
-        /// <param name="exception">The exception to log.</param>
-        void LogException(Exception exception);
     }
 
     /// <summary>
@@ -87,13 +81,6 @@ namespace AuraDDX.Debugging
         public void LogError(string message)
         {
             LogMessage("ERROR", message);
-        }
-
-        /// <inheritdoc/>
-        public void LogException(Exception exception)
-        {
-            LogError($"Exception: {exception.Message}");
-            LogError($"StackTrace: {exception.StackTrace}");
         }
     }
 }

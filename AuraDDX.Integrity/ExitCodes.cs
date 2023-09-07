@@ -1,4 +1,4 @@
-﻿namespace AuraDDX.Debugging
+﻿namespace AuraDDX.Integrity
 {
     /// <summary>
     /// Defines exit codes for debugging and error reporting.

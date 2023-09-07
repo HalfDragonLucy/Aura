@@ -12,12 +12,31 @@ namespace AuraDDX.Viewer
     {
         private static readonly IExtensionManager extensionManager = new ExtensionManager();
         private static readonly ITexConv texConv = new TexConv(Structuration.TexConvPath);
-        private readonly ILogging logger = new Logging("Viewer", Structuration.LogsPath);
+        private readonly ILogging logger = new Logging("AuraDDX", Structuration.LogsPath);
         private static Image? loadedImage;
 
         public Viewer(string[] args)
         {
             InitializeComponent();
+
+            texConv.ErrorOccurred += (sender, errorMessage) =>
+            {
+                logger.LogError(errorMessage);
+                throw new Exception(errorMessage);
+            };
+
+            Structuration.ErrorOccurred += (sender, errorMessage) =>
+            {
+                logger.LogError(errorMessage);
+                throw new Exception(errorMessage);
+            };
+
+            extensionManager.ErrorOccurred += (sender, errorMessage) =>
+            {
+                logger.LogError(errorMessage);
+                throw new Exception(errorMessage);
+            };
+
             HandleArguments(args);
         }
 
