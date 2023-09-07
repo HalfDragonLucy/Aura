@@ -1,6 +1,4 @@
-﻿using AuraDDX.Debugging;
-using AuraDDX.Integrity;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace AuraDDX.DirectX
 {
@@ -16,6 +14,11 @@ namespace AuraDDX.DirectX
         /// <param name="outputDirectory">The directory where the converted file will be saved.</param>
         /// <param name="format">The desired output file format.</param>
         Task ConvertToAsync(string inputFilePath, string outputDirectory, FileFormat format);
+
+        /// <summary>
+        /// Event raised when an error occurs during conversion.
+        /// </summary>
+        event EventHandler<string> ErrorOccurred;
     }
 
     /// <summary>
@@ -29,12 +32,7 @@ namespace AuraDDX.DirectX
     public class TexConv : ITexConv
     {
         private readonly string texConvPath;
-        private readonly ILogging logger = new Logging("DirectX", Structuration.LogsPath);
 
-        /// <summary>
-        /// Initializes a new instance of the TexConv class with the path to texconv.exe.
-        /// </summary>
-        /// <param name="texConvPath">The path to the texconv.exe utility.</param>
         public TexConv(string texConvPath)
         {
             if (string.IsNullOrEmpty(texConvPath))
@@ -50,21 +48,15 @@ namespace AuraDDX.DirectX
             this.texConvPath = texConvPath;
         }
 
-        /// <summary>
-        /// Converts a texture file to the specified format asynchronously.
-        /// </summary>
-        /// <param name="inputFilePath">The path to the input texture file.</param>
-        /// <param name="outputDirectory">The directory where the converted file will be saved.</param>
-        /// <param name="format">The desired output file format.</param>
+        public event EventHandler<string> ErrorOccurred = delegate { };
+
         public async Task ConvertToAsync(string inputFilePath, string outputDirectory, FileFormat format)
         {
             if (!IsSupported(format))
             {
-                logger.LogWarning($"Unsupported file format: {format}");
+                OnErrorOccurred("Unsupported file format.");
                 throw new ArgumentException("Unsupported file format.", nameof(format));
             }
-
-            logger.LogInformation($"Converting {inputFilePath} to {format} format.");
 
             await Task.Run(() =>
             {
@@ -86,18 +78,17 @@ namespace AuraDDX.DirectX
 
                 if (texConv.ExitCode != 0)
                 {
-                    string errorOutput = texConv.StandardError.ReadToEnd();
-                    logger.LogError($"Failed to execute texconv.exe. Exit code: {texConv.ExitCode}. Error output: {errorOutput}");
-                    throw new InvalidOperationException($"Failed to execute texconv.exe. Exit code: {texConv.ExitCode}. Error output: {errorOutput}");
+                    string errorMessage = $"Failed to execute texconv.exe. Exit code: {texConv.ExitCode}. Error output: {texConv.StandardError.ReadToEnd()}";
+                    OnErrorOccurred(errorMessage);
+                    throw new InvalidOperationException(errorMessage);
                 }
 
                 if (!Directory.Exists(outputDirectory))
                 {
-                    logger.LogError($"Output directory not created: {outputDirectory}");
-                    throw new FileNotFoundException("Output file not created.", outputDirectory);
+                    string errorMessage = "Output file not created.";
+                    OnErrorOccurred(errorMessage);
+                    throw new FileNotFoundException(errorMessage, outputDirectory);
                 }
-
-                logger.LogInformation($"Conversion completed. Output saved to {outputDirectory}");
             });
         }
 
@@ -113,6 +104,11 @@ namespace AuraDDX.DirectX
                 FileFormat.BMP or FileFormat.DDS or FileFormat.DDX or FileFormat.HDR or FileFormat.JPG or FileFormat.JPEG or FileFormat.PFM or FileFormat.PNG or FileFormat.PPM or FileFormat.TGA or FileFormat.TIF or FileFormat.TIFF or FileFormat.WMP => true,
                 _ => false,
             };
+        }
+
+        private void OnErrorOccurred(string errorMessage)
+        {
+            ErrorOccurred?.Invoke(this, errorMessage);
         }
     }
 }

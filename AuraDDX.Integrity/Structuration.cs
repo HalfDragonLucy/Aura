@@ -1,6 +1,4 @@
-﻿using AuraDDX.Debugging;
-
-namespace AuraDDX.Integrity
+﻿namespace AuraDDX.Integrity
 {
     /// <summary>
     /// Provides functionality for managing the application's file structure integrity.
@@ -31,6 +29,11 @@ namespace AuraDDX.Integrity
         /// Gets the path to the 'temp' directory.
         /// </summary>
         string TempPath { get; }
+
+        /// <summary>
+        /// Event raised when an error occurs during file structure initialization.
+        /// </summary>
+        event EventHandler<string> ErrorOccurred;
     }
 
     /// <summary>
@@ -38,13 +41,13 @@ namespace AuraDDX.Integrity
     /// </summary>
     public static class Structuration
     {
-        private static readonly ILogging logger;
-
         public static string BasePath { get; private set; }
         public static string BinPath { get; private set; }
         public static string LogsPath { get; private set; }
         public static string TexConvPath { get; private set; }
         public static string TempPath { get; private set; }
+
+        public static event EventHandler<string> ErrorOccurred = delegate { };
 
         static Structuration()
         {
@@ -53,8 +56,6 @@ namespace AuraDDX.Integrity
             LogsPath = Path.Combine(BasePath, "logs");
             TexConvPath = Path.Combine(BinPath, "texconv.exe");
             TempPath = Path.Combine(BasePath, "temp");
-
-            logger = new Logging("Integrity", LogsPath);
 
             Initialize();
         }
@@ -77,22 +78,27 @@ namespace AuraDDX.Integrity
                 if (!Directory.Exists(directoryPath))
                 {
                     Directory.CreateDirectory(directoryPath);
-                    logger.LogInformation($"Created directory: {directoryPath}");
                 }
             }
             catch (Exception ex)
             {
-                logger.LogError($"Error creating directory {directoryPath}: {ex.Message}");
+                ErrorOccurred?.Invoke(null, $"Error creating directory {directoryPath}: {ex.Message}");
             }
         }
 
         private static void EnsureTexConvExists()
         {
-            if (!File.Exists(TexConvPath))
+            try
             {
-                logger.LogError($"Missing texconv.exe at path: {TexConvPath}");
-                Environment.Exit(ExitCodes.MissingDependency);
-                throw new Exception("Missing texconv.exe");
+                if (!File.Exists(TexConvPath))
+                {
+                    Environment.Exit(ExitCodes.MissingDependency);
+                    ErrorOccurred?.Invoke(null, $"Missing texconv.exe at {TexConvPath}");
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorOccurred?.Invoke(null, $"Error checking for texconv.exe: {ex.Message}");
             }
         }
     }
