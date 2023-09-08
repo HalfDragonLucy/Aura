@@ -15,4 +15,8 @@
     <DebugType>embedded</DebugType>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Octokit" Version="7.1.0" />
+  </ItemGroup>
+
 </Project>

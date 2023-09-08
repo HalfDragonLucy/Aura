@@ -34,5 +34,10 @@
         /// Indicates that administrator privileges are required for the operation.
         /// </summary>
         public const int AdminPrivilegesRequired = 5;
+
+        /// <summary>
+        /// Indicates an update closed the program.
+        /// </summary>
+        public const int Update = 6;
     }
 }

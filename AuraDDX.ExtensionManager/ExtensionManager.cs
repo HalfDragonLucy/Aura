@@ -53,13 +53,6 @@ namespace AuraDDX.Extension
                 return;
             }
 
-            if (!IsUserAdministrator())
-            {
-                OnErrorOccurred("Administrator privileges required.");
-                Environment.Exit(ExitCodes.AdminPrivilegesRequired);
-                return;
-            }
-
             try
             {
                 using var fileReg = Registry.CurrentUser.CreateSubKey($"Software\\Classes\\{extension}");
@@ -76,13 +69,6 @@ namespace AuraDDX.Extension
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                return;
-            }
-
-            if (!IsUserAdministrator())
-            {
-                OnErrorOccurred("Administrator privileges required.");
-                Environment.Exit(ExitCodes.AdminPrivilegesRequired);
                 return;
             }
 
@@ -120,19 +106,6 @@ namespace AuraDDX.Extension
                 OnErrorOccurred(ex.Message);
                 return false;
             }
-        }
-
-        private static bool IsUserAdministrator()
-        {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                return false;
-            }
-
-            WindowsIdentity identity = WindowsIdentity.GetCurrent();
-            WindowsPrincipal principal = new(identity);
-
-            return principal.IsInRole(WindowsBuiltInRole.Administrator);
         }
 
         private static void NotifyShell()
