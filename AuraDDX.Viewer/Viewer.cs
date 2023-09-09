@@ -1,6 +1,5 @@
 using AuraDDX.Debugging;
 using AuraDDX.DirectX;
-using AuraDDX.Extension;
 using AuraDDX.Integrity;
 
 namespace AuraDDX.Viewer
@@ -14,33 +13,40 @@ namespace AuraDDX.Viewer
         private const string repo = "AuraDDX";
 
         private static readonly ITexConv texConv = new TexConv();
-        private readonly ILogging logger = new Logging("AuraDDX", Structuration.LogsPath);
+        private readonly ILogging logger = new Logging("AuraDDX", FilePath.LogsPath);
+        private readonly IGithub github = new Github(new Octokit.GitHubClient(new Octokit.ProductHeaderValue("AuraDDX")));
         private static Image? loadedImage;
 
         public Viewer()
         {
             InitializeComponent();
 
+
             CurrentVersion.Text = $"Version: {Application.ProductVersion}";
 
-            Task.Run(async () =>
+            if (github.IsConnectedToInternet())
             {
+                Task.Run(async () =>
+            {
+
                 logger.LogInformation($"Current Version: {Application.ProductVersion}");
-                string latestRelease = await Structuration.CheckForNewReleaseAsync(owner, repo);
+                string latestRelease = await github.CheckForNewReleaseAsync(owner, repo);
                 logger.LogInformation($"Latest Version: {latestRelease}");
 
-                if (latestRelease == Application.ProductVersion)
-                {
-                    BtnUpdate.Visible = false;
-                    logger.LogInformation($"No Update Available.");
-                }
-                else if (Structuration.IsVersionGreaterThan(latestRelease, Application.ProductVersion))
+                if (github.IsVersionGreaterThan(latestRelease, Application.ProductVersion))
                 {
                     BtnUpdate.Visible = true;
                     logger.LogInformation($"Update Available!");
                 }
+                else
+                {
+                    BtnUpdate.Visible = false;
+                    logger.LogInformation($"No Update Available.");
+                }
+
 
             }).Wait();
+            }
 
             texConv.ErrorOccurred += (sender, errorMessage) =>
         {
@@ -48,7 +54,7 @@ namespace AuraDDX.Viewer
             throw new Exception(errorMessage);
         };
 
-            Structuration.ErrorOccurred += (sender, errorMessage) =>
+            github.ErrorOccurred += (sender, errorMessage) =>
             {
                 logger.LogError(errorMessage);
                 throw new Exception(errorMessage);
@@ -65,9 +71,9 @@ namespace AuraDDX.Viewer
         {
             try
             {
-                if (args.Length > 0)
+                if (args.Length > 1)
                 {
-                    ProcessAndDisplayImage(args[1]);
+                    ProcessAndDisplayImage(args[2]);
                     return;
                 }
             }
@@ -103,8 +109,11 @@ namespace AuraDDX.Viewer
                     logger.LogInformation("Image conversion completed successfully.");
                     break;
                 case ".png":
-                    Image img = Image.FromFile(imageFilePath);
-                    DisplayImage(img);
+                    using (Image img = Image.FromFile(imageFilePath))
+                    {
+                        DisplayImage(img);
+                    }
+
                     logger.LogInformation("Image conversion skipped because the extension is not .ddx.");
                     break;
                 default:
@@ -141,7 +150,7 @@ namespace AuraDDX.Viewer
             try
             {
                 logger.LogInformation($"Converting and displaying the image: {imageFilePath}");
-                logger.LogInformation($"Output directory: {Structuration.TempPath}");
+                logger.LogInformation($"Output directory: {FilePath.TempPath}");
 
                 string extension = Path.GetExtension(imageFilePath).ToLower();
 
@@ -152,9 +161,12 @@ namespace AuraDDX.Viewer
 
                         await Task.Run(async () =>
                         {
-                            await texConv.ConvertToAsync(imageFilePath, Structuration.TempPath, FileFormat.PNG);
+                            logger.LogInformation($"Image {imageFilePath}");
+                            logger.LogInformation(FilePath.TempPath);
 
-                            string targetFilePath = Path.Combine(Structuration.TempPath, $"{Path.GetFileNameWithoutExtension(imageFilePath)}.{FileFormat.PNG}");
+                            await texConv.ConvertToAsync(imageFilePath, FilePath.TempPath, FileFormat.PNG);
+
+                            string targetFilePath = Path.Combine(FilePath.TempPath, $"{Path.GetFileNameWithoutExtension(imageFilePath)}.{FileFormat.PNG}");
                             logger.LogInformation($"Target file path: {targetFilePath}");
 
                             loadedImage = Image.FromFile(targetFilePath);
@@ -209,7 +221,7 @@ namespace AuraDDX.Viewer
             loadedImage?.Dispose();
             logger.LogInformation("Disposed of Displayed Image.");
 
-            string[] pngFiles = Directory.GetFiles(Structuration.TempPath, "*.png");
+            string[] pngFiles = Directory.GetFiles(FilePath.TempPath, "*.png");
 
             foreach (string filePath in pngFiles)
             {
@@ -277,7 +289,10 @@ namespace AuraDDX.Viewer
 
         private async void UpdateProgram(object sender, EventArgs e)
         {
-            await Structuration.DownloadAndExecuteLatestReleaseAsync(owner, repo, "setup.exe");
+            if (github.IsConnectedToInternet())
+            {
+                await github.DownloadAndExecuteLatestReleaseAsync(owner, repo, "setup.exe");
+            }
         }
     }
 }

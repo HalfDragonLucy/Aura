@@ -39,7 +39,7 @@ namespace AuraDDX.DirectX
                 throw new ArgumentException("Unsupported file format.", nameof(format));
             }
 
-            string tempExePath = Path.Combine(Structuration.TempPath, "texconv.exe");
+            string tempExePath = Path.Combine(FilePath.TempPath, "texconv.exe");
 
             try
             {
