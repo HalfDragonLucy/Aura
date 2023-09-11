@@ -11,7 +11,7 @@
     <ApplicationIcon>fav.ico</ApplicationIcon>
     <SignAssembly>False</SignAssembly>
     <ErrorReport>none</ErrorReport>
-    <Version>2023.9.9</Version>
+    <Version>2023.9.11</Version>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
