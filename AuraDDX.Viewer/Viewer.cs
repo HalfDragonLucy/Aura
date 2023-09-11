@@ -21,7 +21,6 @@ namespace AuraDDX.Viewer
         {
             InitializeComponent();
 
-
             CurrentVersion.Text = $"Version: {Application.ProductVersion}";
 
             if (github.IsConnectedToInternet())
@@ -60,6 +59,7 @@ namespace AuraDDX.Viewer
                 throw new Exception(errorMessage);
             };
 
+            texConv.Initialize();
             HandleArguments(Environment.GetCommandLineArgs());
         }
 
@@ -207,6 +207,24 @@ namespace AuraDDX.Viewer
         {
             logger.LogInformation("Viewer form closed.");
             PerformGarbageCollection();
+
+            string texconv = Path.Combine(FilePath.TempPath, "texconv.exe");
+
+            try
+            {
+                File.Delete(texconv);
+                logger.LogInformation($"Deleted file: {texconv}");
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                logger.LogError($"Unauthorized access when deleting file: {texconv}");
+                logger.LogError($"Exception: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"An error occurred while deleting file: {texconv}");
+                logger.LogError($"Exception: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -279,8 +297,8 @@ namespace AuraDDX.Viewer
             switch (OpenNewFile.ShowDialog())
             {
                 case DialogResult.OK:
-                    PerformGarbageCollection();
                     ProcessAndDisplayImage(OpenNewFile.FileName);
+                    PerformGarbageCollection();
                     break;
             }
 
