@@ -1,72 +1,60 @@
+<h1 align="center">AuraDDX</h1>
 
-# AuraDDX
+<p align="center">
+  <img src="https://github.com/HalfDragonLucy/AuraDDX/blob/master/fav.png?raw=true" alt="AuraDDX Logo">
+</p>
 
-![](https://github.com/HalfDragonLucy/AuraDDX/blob/master/fav.png)
+<p align="center">
+  <a href="https://github.com/HalfDragonLucy/AuraDDX/releases">
+    <img alt="GitHub Downloads" src="https://img.shields.io/github/downloads/HalfDragonLucy/AuraDDX/total?style=for-the-badge">
+  </a>
+  <a href="https://github.com/HalfDragonLucy/AuraDDX/releases">
+    <img alt="GitHub Release" src="https://img.shields.io/github/v/release/HalfDragonLucy/AuraDDX?style=for-the-badge">
+  </a>
+</p>
 
-**Table of Contents**
-- [Introduction](#introduction)
-- [Program Overview](#program-overview)
-- [Documentation](#documentation)
-  - [Installation](#installation)
-  - [Usage](#usage)
-  - [Command Line Arguments](#command-line-arguments)
-  - [File Extension Registration](#file-extension-registration)
-  - [Viewing DDX Images](#viewing-ddx-images)
-  - [Cleanup](#cleanup)
-- [License](#license)
+<p align="center">
+  <a href="https://github.com/HalfDragonLucy/AuraDDX/issues">
+    <img alt="GitHub Issues" src="https://img.shields.io/github/issues/HalfDragonLucy/AuraDDX?style=for-the-badge">
+  </a>
+  <a href="https://github.com/HalfDragonLucy/AuraDDX/commits/master">
+    <img alt="GitHub Last Commit" src="https://img.shields.io/github/last-commit/HalfDragonLucy/AuraDDX?style=for-the-badge">
+  </a>
+  <a href="https://github.com/HalfDragonLucy/AuraDDX/blob/master/LICENSE.txt">
+    <img alt="GitHub License" src="https://img.shields.io/github/license/HalfDragonLucy/AuraDDX?style=for-the-badge">
+  </a>
+  <a href="https://github.com/HalfDragonLucy/AuraDDX">
+    <img alt="GitHub Code Size" src="https://img.shields.io/github/languages/code-size/HalfDragonLucy/AuraDDX?style=for-the-badge">
+  </a>
+</p>
 
 ## Introduction
 
-AuraDDX Viewer is a Windows application designed for viewing DDX image files. It offers functionality for registering and unregistering the program to open DDX files and converting and displaying images in PNG format.
+Welcome to the AuraDDX Viewer repository! This viewer application allows you to display and convert images in various formats, including the proprietary ".ddx" format.
 
-## Program Overview
+## Table of Contents
 
-The program is structured into several components:
+- [Introduction](#introduction)
+- [Installation](#installation)
+- [Features](#features)
+- [Usage](#usage)
 
-- **Extension Management (`AuraDDX.Extension`)**: Handles the registration and unregistration of file extensions for the application.
-- **File Structure Integrity (`AuraDDX.Integrity`)**: Ensures the integrity of the application's file structure by creating necessary directories and checking for the existence of essential files, such as `texconv.exe`.
-- **DirectX Image Conversion (`AuraDDX.DirectX`)**: Provides functionality for converting images to the PNG format using the `texconv.exe` utility.
-- **Viewer Application (`AuraDDX.Viewer`)**: The main Windows Forms application responsible for viewing DDX images and managing file extensions.
+## Installation
 
-### Installation
+The AuraDDX Viewer is built using the [.NET 6](https://dotnet.microsoft.com/en-us/download/dotnet/6.0) framework.
 
-1. Make sure you have [.NET 6](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
-2. Download the latest release; this program comes with a `setup.exe` for easy installation.
-3. Run the `setup.exe` installer.
-4. Follow the installation instructions, and when prompted, click 'Yes' to create a shortcut on your desktop.
-5. Enjoy opening DDX Images.
+You can download the latest release of the AuraDDX Viewer from the [Releases](https://github.com/HalfDragonLucy/AuraDDX/releases) page. Simply download the setup executable.
 
-### Usage
+## Features
 
-The AuraDDX Viewer can be used both from the command line or by simply opening a DDX file.
+- **Image Viewing:** Display images from the format `.ddx` and `.png`.
+- **Image Conversion:** Convert `.ddx` images to other formats, such as `.png` (soon to be implemented).
+- **Version Checking:** Automatically check for updates and notify the user if a new version is available.
 
-Replace `<path_to_ddx_image>` with the path to the DDX image file you want to view.
+## Usage
 
-#### Graphical User Interface (GUI)
+To use the AuraDDX Viewer, follow these steps:
 
-1. Run the `AuraDDXViewer.exe` executable.
-2. If the program is launched without any command line arguments, it will display a registration menu to associate DDX files with the program.
-3. If you provide a DDX image file as a command line argument, the program will convert and display the image.
+1. **Open an Image:** Click on the "Open" button to select an image file. The application will display the image on the form.
 
-### Command Line Arguments
-
-- `<path_to_ddx_image>`: The path to the DDX image file you want to view. Must be provided without any other flags or parameters.
-
-### File Extension Registration
-
-- When you launch the program without any command line arguments, it will ask if you want to register or unregister the program to open DDX files.
-- If you choose to register, the program will associate itself with the `.ddx` file extension, allowing you to open DDX images by double-clicking them in File Explorer.
-- If you choose to unregister, the program will disassociate itself from the `.ddx` file extension.
-
-### Viewing DDX Images
-
-- When you provide a DDX image file as a command line argument, the program will convert it to PNG format using `texconv.exe` and display the resulting image.
-- The converted PNG image is displayed in the program's GUI.
-
-### Cleanup
-
-- When the program's GUI is closed, it automatically deletes temporary PNG files created during image conversion.
-
-## License
-
-This project is licensed under the [MIT License](https://github.com/HalfDragonLucy/AuraDDX/blob/master/LICENSE.txt).
+2. **Version Check:** The application will automatically check for updates when you run it. If a new version is available, you will be notified, and an "Update" button will appear.
