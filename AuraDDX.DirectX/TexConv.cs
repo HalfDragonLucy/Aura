@@ -20,6 +20,11 @@ namespace AuraDDX.DirectX
         /// <param name="outputDirectory">The output directory.</param>
         /// <param name="format">The output file format.</param>
         Task ConvertToAsync(string inputFilePath, string outputDirectory, FileFormat format);
+
+        /// <summary>
+        /// Initializes the TexConv component by creating the texconv.exe.
+        /// </summary>
+        void Initialize();
     }
 
     public enum FileFormat
@@ -29,21 +34,46 @@ namespace AuraDDX.DirectX
 
     public class TexConv : ITexConv
     {
+        private readonly string texConvExePath;
+        private bool isInitialized = false;
+
         public event EventHandler<string> ErrorOccurred = delegate { };
+
+        public TexConv()
+        {
+            texConvExePath = Path.Combine(FilePath.TempPath, "texconv.exe");
+        }
+
+        public void Initialize()
+        {
+            if (!isInitialized)
+            {
+                File.WriteAllBytes(texConvExePath, Properties.Resources.TexConvExec);
+                isInitialized = true;
+            }
+        }
+
 
         public async Task ConvertToAsync(string inputFilePath, string outputDirectory, FileFormat format)
         {
+            if (!isInitialized)
+            {
+                Initialize();
+            }
+
             if (!IsSupported(format))
             {
                 OnErrorOccurred("Unsupported file format.");
                 throw new ArgumentException("Unsupported file format.", nameof(format));
             }
 
-            string tempExePath = Path.Combine(FilePath.TempPath, "texconv.exe");
-
             try
             {
-                await File.WriteAllBytesAsync(tempExePath, Properties.Resources.TexConvExec);
+                if (!File.Exists(texConvExePath))
+                {
+                    OnErrorOccurred($"texconv.exe not found at {texConvExePath}");
+                    throw new FileNotFoundException("texconv.exe not found.", texConvExePath);
+                }
 
                 using var texConvProcess = new Process
                 {
@@ -53,8 +83,8 @@ namespace AuraDDX.DirectX
                         RedirectStandardError = true,
                         WindowStyle = ProcessWindowStyle.Hidden,
                         CreateNoWindow = true,
-                        FileName = tempExePath,
-                        Arguments = $"\"{inputFilePath}\" -ft {format.ToString().ToLower()} -y -o \"{outputDirectory}\""
+                        FileName = texConvExePath,
+                        Arguments = $"\"{inputFilePath}\" -ft {format.ToString().ToLower()} -y -o {outputDirectory}"
                     }
                 };
 
@@ -68,9 +98,10 @@ namespace AuraDDX.DirectX
                     throw new InvalidOperationException(errorMessage);
                 }
             }
-            finally
+            catch (Exception ex)
             {
-                File.Delete(tempExePath);
+                OnErrorOccurred($"An error occurred: {ex.Message}");
+                throw;
             }
         }
 
