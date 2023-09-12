@@ -35,13 +35,15 @@
             openToolStripMenuItem = new ToolStripMenuItem();
             BtnUpdate = new ToolStripButton();
             CurrentVersion = new ToolStripLabel();
+            ImageDisplay = new PictureBox();
             Menu.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)ImageDisplay).BeginInit();
             SuspendLayout();
             // 
             // OpenNewFile
             // 
             OpenNewFile.DefaultExt = "ddx";
-            OpenNewFile.Filter = "DDX Files (*.ddx)|*.ddx|PNG Files (*.png)|*.png";
+            OpenNewFile.Filter = "Image Files (*.bmp, *.jpg, *.jpeg, *.png,  *.tiff, *.ddx, *.dds)|*.bmp;*.jpg;*.jpeg;*.png;* .tiff;*.ddx; *.dds|All Files (*.*)|*.*\"";
             OpenNewFile.RestoreDirectory = true;
             // 
             // Menu
@@ -69,7 +71,7 @@
             // 
             openToolStripMenuItem.Image = Properties.Resources.OpenFile;
             openToolStripMenuItem.Name = "openToolStripMenuItem";
-            openToolStripMenuItem.Size = new Size(180, 26);
+            openToolStripMenuItem.Size = new Size(118, 26);
             openToolStripMenuItem.Text = "Open";
             openToolStripMenuItem.Click += OpenFile;
             // 
@@ -95,12 +97,24 @@
             CurrentVersion.Size = new Size(62, 22);
             CurrentVersion.Text = "Version";
             // 
+            // ImageDisplay
+            // 
+            ImageDisplay.BackgroundImageLayout = ImageLayout.None;
+            ImageDisplay.Dock = DockStyle.Fill;
+            ImageDisplay.Location = new Point(0, 25);
+            ImageDisplay.Name = "ImageDisplay";
+            ImageDisplay.Size = new Size(1264, 656);
+            ImageDisplay.SizeMode = PictureBoxSizeMode.Zoom;
+            ImageDisplay.TabIndex = 2;
+            ImageDisplay.TabStop = false;
+            // 
             // Viewer
             // 
             AutoScaleDimensions = new SizeF(9F, 21F);
             AutoScaleMode = AutoScaleMode.Font;
             BackgroundImageLayout = ImageLayout.Zoom;
             ClientSize = new Size(1264, 681);
+            Controls.Add(ImageDisplay);
             Controls.Add(Menu);
             DoubleBuffered = true;
             Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point);
@@ -111,6 +125,7 @@
             FormClosed += Viewer_FormClosed;
             Menu.ResumeLayout(false);
             Menu.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)ImageDisplay).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -122,5 +137,6 @@
         private ToolStripMenuItem openToolStripMenuItem;
         private ToolStripLabel CurrentVersion;
         private ToolStripButton BtnUpdate;
+        private PictureBox ImageDisplay;
     }
 }
