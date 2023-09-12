@@ -26,158 +26,120 @@ namespace AuraDDX.Viewer
             if (github.IsConnectedToInternet())
             {
                 Task.Run(async () =>
-            {
-
-                logger.LogInformation($"Current Version: {Application.ProductVersion}");
-                string latestRelease = await github.CheckForNewReleaseAsync(owner, repo);
-                logger.LogInformation($"Latest Version: {latestRelease}");
-
-                if (github.IsVersionGreaterThan(latestRelease, Application.ProductVersion))
                 {
-                    BtnUpdate.Visible = true;
-                    logger.LogInformation($"Update Available!");
-                }
-                else
-                {
-                    BtnUpdate.Visible = false;
-                    logger.LogInformation($"No Update Available.");
-                }
+                    logger.LogInformation("Checking for updates...");
+                    logger.LogInformation($"Current Version: {Application.ProductVersion}");
+                    string latestRelease = await github.CheckForNewReleaseAsync(owner, repo);
+                    logger.LogInformation($"Latest Version: {latestRelease}");
 
-
-            }).Wait();
+                    if (github.IsVersionGreaterThan(latestRelease, Application.ProductVersion))
+                    {
+                        BtnUpdate.Visible = true;
+                        logger.LogInformation("Update Available!");
+                    }
+                    else
+                    {
+                        BtnUpdate.Visible = false;
+                        logger.LogInformation("No Update Available.");
+                    }
+                }).Wait();
             }
 
             texConv.ErrorOccurred += (sender, errorMessage) =>
-        {
-            logger.LogError(errorMessage);
-            throw new Exception(errorMessage);
-        };
+            {
+                logger.LogError($"TexConv Error: {errorMessage}");
+                throw new Exception(errorMessage);
+            };
 
             github.ErrorOccurred += (sender, errorMessage) =>
             {
-                logger.LogError(errorMessage);
+                logger.LogError($"GitHub Error: {errorMessage}");
                 throw new Exception(errorMessage);
             };
 
             texConv.Initialize();
-            HandleArguments(Environment.GetCommandLineArgs());
+
+            string[] args = Environment.GetCommandLineArgs();
+            HandleArguments(args).Wait();
         }
 
         /// <summary>
         /// Handles command-line arguments passed to the application.
         /// </summary>
         /// <param name="args">Command-line arguments.</param>
-        private void HandleArguments(string[] args)
+        private async Task HandleArguments(string[] args)
         {
-            try
+            if (args.Length == 2)
             {
-                if (args.Length > 1)
+                string imageFilePath = args[2];
+
+                try
                 {
-                    ProcessAndDisplayImage(args[2]);
-                    return;
+                    await ProcessImage(imageFilePath);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex.Message);
                 }
             }
-            catch (Exception ex)
-            {
-                logger.LogError(ex.Message);
-                logger.LogError(args.Length.ToString());
-            }
-
         }
 
+
         /// <summary>
-        /// Parses and processes an image file, converting it if the extension is ".ddx".
+        /// Parses and processes an image file, converting it if it's a supported extension.
         /// </summary>
         /// <param name="imageFilePath">The path to the image file.</param>
-        private async void ProcessAndDisplayImage(string imageFilePath)
+        private async Task ProcessImage(string imageFilePath)
         {
-            if (!IsValidPicturePath(imageFilePath))
+            var ext = Path.GetExtension(imageFilePath);
+
+            if (!IsSupportedExtension(ext))
             {
-                logger.LogError($"Invalid picture path provided. Code: {ExitCodes.InvalidArgument}");
+                logger.LogInformation("Image conversion skipped because the extension is not supported.");
                 Environment.Exit(ExitCodes.InvalidArgument);
-                throw new Exception("Please provide a valid .ddx or .png picture path argument.");
+                throw new Exception("Please provide a valid supported picture path argument.");
             }
 
             logger.LogInformation($"Converting image at path: {imageFilePath}");
 
-            string extension = Path.GetExtension(imageFilePath).ToLower();
-
-            switch (extension)
-            {
-                case ".ddx":
-                    await ConvertAndDisplayImageAsync(imageFilePath);
-                    logger.LogInformation("Image conversion completed successfully.");
-                    break;
-                case ".png":
-                    using (Image img = Image.FromFile(imageFilePath))
-                    {
-                        DisplayImage(img);
-                    }
-
-                    logger.LogInformation("Image conversion skipped because the extension is not .ddx.");
-                    break;
-                default:
-                    logger.LogError("Unsupported file extension. Code: " + ExitCodes.InvalidArgument);
-                    break;
-            }
+            await ConvertImageAsync(imageFilePath, FileFormat.PNG);
+            logger.LogInformation("Image conversion completed successfully.");
         }
 
-        /// <summary>
-        /// Checks if the provided picture path is valid.
-        /// </summary>
-        /// <param name="picturePath">The path to the picture.</param>
-        /// <returns>True if the path is valid; otherwise, false.</returns>
-        private bool IsValidPicturePath(string picturePath)
-        {
-            bool isValid = !string.IsNullOrWhiteSpace(picturePath);
-            string extension = Path.GetExtension(picturePath).ToLower();
-
-            if (extension != ".ddx" && extension != ".png")
-            {
-                isValid = false;
-                logger.LogError("Invalid picture path provided. Code: " + ExitCodes.InvalidArgument);
-            }
-
-            return isValid;
-        }
 
         /// <summary>
-        /// Converts an image file to a different format and displays it if it's a .ddx file.
+        /// Converts an image file to the specified format and displays it.
         /// </summary>
         /// <param name="imageFilePath">The path to the image file.</param>
-        private async Task ConvertAndDisplayImageAsync(string imageFilePath)
+        /// <param name="targetExtension">The target file extension to convert to as a string (e.g., "png").</param>
+        private async Task ConvertImageAsync(string imageFilePath, FileFormat targetExtension)
         {
             try
             {
+                string sourceExtension = Path.GetExtension(imageFilePath).ToLower();
+
                 logger.LogInformation($"Converting and displaying the image: {imageFilePath}");
                 logger.LogInformation($"Output directory: {FilePath.TempPath}");
+                logger.LogInformation($"Target format: {targetExtension}");
 
-                string extension = Path.GetExtension(imageFilePath).ToLower();
-
-                switch (extension)
+                await Task.Run(async () =>
                 {
-                    case ".ddx":
-                        logger.LogInformation($"Target format: {FileFormat.PNG}");
-
-                        await Task.Run(async () =>
-                        {
-                            logger.LogInformation($"Image {imageFilePath}");
-                            logger.LogInformation(FilePath.TempPath);
-
-                            await texConv.ConvertToAsync(imageFilePath, FilePath.TempPath, FileFormat.PNG);
-
-                            string targetFilePath = Path.Combine(FilePath.TempPath, $"{Path.GetFileNameWithoutExtension(imageFilePath)}.{FileFormat.PNG}");
-                            logger.LogInformation($"Target file path: {targetFilePath}");
-
-                            loadedImage = Image.FromFile(targetFilePath);
-
-                            DisplayImage(loadedImage);
-                        });
-                        break;
-                    default:
-                        logger.LogError("Invalid picture extension. Code: " + ExitCodes.InvalidArgument);
+                    if (!IsSupportedExtension(sourceExtension))
+                    {
+                        logger.LogError("Unsupported file extension or target format. Code: " + ExitCodes.InvalidArgument);
                         return;
-                }
+                    }
+
+                    logger.LogInformation($"Image {imageFilePath}");
+                    logger.LogInformation(FilePath.TempPath);
+
+                    await texConv.ConvertToAsync(imageFilePath, FilePath.TempPath, targetExtension);
+
+                    string targetFilePath = Path.Combine(FilePath.TempPath, $"{Path.GetFileNameWithoutExtension(imageFilePath)}.{targetExtension}");
+                    logger.LogInformation($"Target file path: {targetFilePath}");
+
+                    await LoadAndDisplayImage(targetFilePath);
+                });
             }
             catch (Exception ex)
             {
@@ -188,14 +150,34 @@ namespace AuraDDX.Viewer
             }
         }
 
-        /// <summary>
-        /// Displays an image on the form.
-        /// </summary>
-        /// <param name="img">The image to display.</param>
-        private void DisplayImage(Image img)
+
+        private static bool IsSupportedExtension(string extension)
         {
-            BackgroundImage = img;
-            logger.LogInformation("Image displayed successfully.");
+            string[] supportedExtensions = { ".ddx", ".dds", ".png", ".jpg", ".jpeg", ".bmp", ".tiff" };
+            return supportedExtensions.Contains(extension);
+        }
+
+
+
+        /// <summary>
+        /// Loads and displays an image from the specified file path on the form.
+        /// </summary>
+        /// <param name="imgPath">The file path of the image to display.</param>
+        private async Task LoadAndDisplayImage(string imgPath)
+        {
+            try
+            {
+                using (var imageStream = File.OpenRead(imgPath))
+                {
+                    loadedImage = await Task.Run(() => Image.FromStream(imageStream));
+                    ImageDisplay.Image = loadedImage;
+                }
+                logger.LogInformation("Image displayed successfully.");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"Error displaying image: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -292,12 +274,12 @@ namespace AuraDDX.Viewer
         /// </summary>
         /// <param name="sender">The sender object.</param>
         /// <param name="e">Event arguments.</param>
-        private void OpenFile(object sender, EventArgs e)
+        private async void OpenFile(object sender, EventArgs e)
         {
             switch (OpenNewFile.ShowDialog())
             {
                 case DialogResult.OK:
-                    ProcessAndDisplayImage(OpenNewFile.FileName);
+                    await ProcessImage(OpenNewFile.FileName);
                     PerformGarbageCollection();
                     break;
             }
