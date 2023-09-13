@@ -3,7 +3,7 @@
     /// <summary>
     /// Defines exit codes for debugging and error reporting.
     /// </summary>
-    public static class ExitCodes
+    public static class ExitCode
     {
         /// <summary>
         /// Indicates a successful execution without errors.
@@ -39,5 +39,12 @@
         /// Indicates an update closed the program.
         /// </summary>
         public const int Update = 6;
+
+        /// <summary>
+        /// Indicates an error occurred during argument handling.
+        /// </summary>
+        public const int ArgumentHandlingError = 7;
+
+        public const int UnsupportedFormat = 8;
     }
 }

@@ -73,7 +73,7 @@
             openToolStripMenuItem.Name = "openToolStripMenuItem";
             openToolStripMenuItem.Size = new Size(118, 26);
             openToolStripMenuItem.Text = "Open";
-            openToolStripMenuItem.Click += OpenFile;
+            openToolStripMenuItem.Click += OpenFileAsync;
             // 
             // BtnUpdate
             // 
@@ -85,7 +85,7 @@
             BtnUpdate.Name = "BtnUpdate";
             BtnUpdate.Size = new Size(23, 22);
             BtnUpdate.Visible = false;
-            BtnUpdate.Click += UpdateProgram;
+            BtnUpdate.Click += UpdateProgramAsync;
             // 
             // CurrentVersion
             // 

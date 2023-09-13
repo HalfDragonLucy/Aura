@@ -58,6 +58,7 @@ namespace AuraDDX.Debugging
             try
             {
                 File.AppendAllText(logFilePath, formattedMessage + Environment.NewLine);
+                Console.WriteLine(formattedMessage);
             }
             catch (Exception ex)
             {

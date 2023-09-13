@@ -105,7 +105,7 @@ namespace AuraDDX.Integrity
                             process.StartInfo.UseShellExecute = true;
                             process.Start();
 
-                            Environment.Exit(ExitCodes.Update);
+                            Environment.Exit(ExitCode.Update);
                             process.WaitForExit();
                             File.Delete(downloadFilePath);
                         }
