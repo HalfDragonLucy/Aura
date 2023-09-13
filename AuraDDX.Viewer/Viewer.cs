@@ -1,12 +1,11 @@
 using AuraDDX.Debugging;
 using AuraDDX.DirectX;
 using AuraDDX.Integrity;
+using CommandLine;
+using CommandLine.Text;
 
 namespace AuraDDX.Viewer
 {
-    /// <summary>
-    /// Represents the main Viewer form for displaying images.
-    /// </summary>
     public partial class Viewer : Form
     {
         private const string owner = "HalfDragonLucy";
@@ -17,12 +16,30 @@ namespace AuraDDX.Viewer
         private readonly IGithub github = new Github(new Octokit.GitHubClient(new Octokit.ProductHeaderValue("AuraDDX")));
         private static Image? loadedImage;
 
+        public class Options
+        {
+            [Value(0, MetaName = "imageFilePath", Required = false, HelpText = "Path to the image file to process.")]
+            public string? ImageFilePath { get; set; }
+        }
+
         public Viewer()
         {
             InitializeComponent();
+            InitializeVersionInfo();
+            InitializeGitHub();
+            InitializeTexConv();
 
+            CheckAndUpdate();
+            HandleArguments();
+        }
+
+        private void InitializeVersionInfo()
+        {
             CurrentVersion.Text = $"Version: {Application.ProductVersion}";
+        }
 
+        private void CheckAndUpdate()
+        {
             if (github.IsConnectedToInternet())
             {
                 Task.Run(async () =>
@@ -34,144 +51,134 @@ namespace AuraDDX.Viewer
 
                     if (github.IsVersionGreaterThan(latestRelease, Application.ProductVersion))
                     {
-                        BtnUpdate.Visible = true;
+                        ShowUpdateButton();
                         logger.LogInformation("Update Available!");
                     }
                     else
                     {
-                        BtnUpdate.Visible = false;
+                        HideUpdateButton();
                         logger.LogInformation("No Update Available.");
                     }
                 }).Wait();
             }
+        }
 
+        private void InitializeTexConv()
+        {
             texConv.ErrorOccurred += (sender, errorMessage) =>
             {
                 logger.LogError($"TexConv Error: {errorMessage}");
                 throw new Exception(errorMessage);
             };
 
+            texConv.Initialize();
+        }
+
+        private void InitializeGitHub()
+        {
             github.ErrorOccurred += (sender, errorMessage) =>
             {
                 logger.LogError($"GitHub Error: {errorMessage}");
                 throw new Exception(errorMessage);
             };
-
-            texConv.Initialize();
-
-            string[] args = Environment.GetCommandLineArgs();
-            HandleArguments(args).Wait();
         }
 
-        /// <summary>
-        /// Handles command-line arguments passed to the application.
-        /// </summary>
-        /// <param name="args">Command-line arguments.</param>
-        private async Task HandleArguments(string[] args)
+        private void ShowUpdateButton()
         {
-            if (args.Length == 2)
-            {
-                string imageFilePath = args[2];
+            BtnUpdate.Visible = true;
+        }
 
-                try
+        private void HideUpdateButton()
+        {
+            BtnUpdate.Visible = false;
+        }
+
+        private void HandleArguments()
+        {
+            try
+            {
+                var parser = new Parser(with => with.HelpWriter = null);
+                string[] args = Environment.GetCommandLineArgs().Skip(1).ToArray();
+
+                logger.LogInformation("Command-line arguments:");
+                foreach (var arg in args)
                 {
-                    await ProcessImage(imageFilePath);
+                    logger.LogInformation(arg);
                 }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex.Message);
-                }
+
+                parser.ParseArguments<Options>(args)
+                    .WithParsed(options =>
+                    {
+                        if (options.ImageFilePath != null)
+                        {
+                            logger.LogInformation("Command-line argument 'ImageFilePath': " + options.ImageFilePath);
+                            ProcessImageAsync(options.ImageFilePath, FileFormat.PNG);
+                        }
+                    })
+                    .WithNotParsed(errors =>
+                    {
+                        HelpText helpText = HelpText.AutoBuild((ParserResult<Options>)errors);
+                        logger.LogError("Argument parsing error:");
+                        logger.LogError(helpText.ToString());
+                    });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"An error occurred while handling command-line arguments: {ex.Message}");
+                logger.LogError($"Code: {ExitCode.ArgumentHandlingError}");
+                Environment.Exit(ExitCode.ArgumentHandlingError);
+                throw new Exception($"An error occurred while handling command-line arguments: {ex.Message}");
             }
         }
 
-
-        /// <summary>
-        /// Parses and processes an image file, converting it if it's a supported extension.
-        /// </summary>
-        /// <param name="imageFilePath">The path to the image file.</param>
-        private async Task ProcessImage(string imageFilePath)
-        {
-            var ext = Path.GetExtension(imageFilePath);
-
-            if (!IsSupportedExtension(ext))
-            {
-                logger.LogInformation("Image conversion skipped because the extension is not supported.");
-                Environment.Exit(ExitCodes.InvalidArgument);
-                throw new Exception("Please provide a valid supported picture path argument.");
-            }
-
-            logger.LogInformation($"Converting image at path: {imageFilePath}");
-
-            await ConvertImageAsync(imageFilePath, FileFormat.PNG);
-            logger.LogInformation("Image conversion completed successfully.");
-        }
-
-
-        /// <summary>
-        /// Converts an image file to the specified format and displays it.
-        /// </summary>
-        /// <param name="imageFilePath">The path to the image file.</param>
-        /// <param name="targetExtension">The target file extension to convert to as a string (e.g., "png").</param>
-        private async Task ConvertImageAsync(string imageFilePath, FileFormat targetExtension)
+        private async Task ProcessImageAsync(string imageFilePath, FileFormat targetExtension)
         {
             try
             {
                 string sourceExtension = Path.GetExtension(imageFilePath).ToLower();
+                string _targetExtension = $".{targetExtension.ToString().ToLower()}";
+                string targetFilePath = Path.Combine(FilePath.TempPath, Path.GetFileNameWithoutExtension(imageFilePath) + _targetExtension);
 
-                logger.LogInformation($"Converting and displaying the image: {imageFilePath}");
-                logger.LogInformation($"Output directory: {FilePath.TempPath}");
-                logger.LogInformation($"Target format: {targetExtension}");
+                logger.LogInformation($"Processing image: {imageFilePath}");
+                logger.LogInformation($"Target file: {targetFilePath}");
 
-                await Task.Run(async () =>
+                if (!IsSupportedExtension(sourceExtension) || !IsSupportedExtension(_targetExtension))
                 {
-                    if (!IsSupportedExtension(sourceExtension))
-                    {
-                        logger.LogError("Unsupported file extension or target format. Code: " + ExitCodes.InvalidArgument);
-                        return;
-                    }
+                    logger.LogError("Unsupported file extension or target format.");
+                    logger.LogError($"Code: {ExitCode.UnsupportedFormat}");
+                    Environment.Exit(ExitCode.UnsupportedFormat);
+                    throw new ArgumentException("Please provide a valid supported picture path argument.");
+                }
 
-                    logger.LogInformation($"Image {imageFilePath}");
-                    logger.LogInformation(FilePath.TempPath);
+                logger.LogInformation("Starting image conversion...");
 
-                    await texConv.ConvertToAsync(imageFilePath, FilePath.TempPath, targetExtension);
+                await texConv.ConvertToAsync(imageFilePath, FilePath.TempPath, targetExtension);
 
-                    string targetFilePath = Path.Combine(FilePath.TempPath, $"{Path.GetFileNameWithoutExtension(imageFilePath)}.{targetExtension}");
-                    logger.LogInformation($"Target file path: {targetFilePath}");
+                logger.LogInformation($"Image conversion completed. Result saved to: {targetFilePath}");
 
-                    await LoadAndDisplayImage(targetFilePath);
-                });
+                LoadAndDisplayImage(targetFilePath);
             }
             catch (Exception ex)
             {
                 logger.LogError($"An error occurred while converting the picture: {ex.Message}");
-                logger.LogError($"Code: {ExitCodes.ConversionError}");
-                Environment.Exit(ExitCodes.ConversionError);
+                logger.LogError($"Code: {ExitCode.ConversionError}");
+                Environment.Exit(ExitCode.ConversionError);
                 throw new Exception($"An error occurred while converting the picture: {ex.Message}");
             }
         }
 
-
-        private static bool IsSupportedExtension(string extension)
-        {
-            string[] supportedExtensions = { ".ddx", ".dds", ".png", ".jpg", ".jpeg", ".bmp", ".tiff" };
-            return supportedExtensions.Contains(extension);
-        }
-
-
-
-        /// <summary>
-        /// Loads and displays an image from the specified file path on the form.
-        /// </summary>
-        /// <param name="imgPath">The file path of the image to display.</param>
-        private async Task LoadAndDisplayImage(string imgPath)
+        private void LoadAndDisplayImage(string imgPath)
         {
             try
             {
+                logger.LogInformation($"Loading and displaying image from path: {imgPath}");
+
                 using (var imageStream = File.OpenRead(imgPath))
                 {
-                    loadedImage = await Task.Run(() => Image.FromStream(imageStream));
+                    loadedImage = Image.FromStream(imageStream);
                     ImageDisplay.Image = loadedImage;
                 }
+
                 logger.LogInformation("Image displayed successfully.");
             }
             catch (Exception ex)
@@ -180,59 +187,27 @@ namespace AuraDDX.Viewer
             }
         }
 
-        /// <summary>
-        /// Handles the event when the Viewer form is closed.
-        /// </summary>
-        /// <param name="sender">The sender object.</param>
-        /// <param name="e">Event arguments.</param>
-        private void Viewer_FormClosed(object sender, FormClosedEventArgs e)
-        {
-            logger.LogInformation("Viewer form closed.");
-            PerformGarbageCollection();
-
-            string texconv = Path.Combine(FilePath.TempPath, "texconv.exe");
-
-            try
-            {
-                File.Delete(texconv);
-                logger.LogInformation($"Deleted file: {texconv}");
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                logger.LogError($"Unauthorized access when deleting file: {texconv}");
-                logger.LogError($"Exception: {ex.Message}");
-            }
-            catch (Exception ex)
-            {
-                logger.LogError($"An error occurred while deleting file: {texconv}");
-                logger.LogError($"Exception: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Performs garbage collection and deletes temporary files.
-        /// </summary>
         public void PerformGarbageCollection()
         {
-            logger.LogInformation("Deleting .png files in 'temp' directory...");
+            logger.LogInformation("Performing garbage collection...");
 
-            logger.LogInformation("Disposing of Displayed Image...");
+            logger.LogInformation("Disposing of displayed image...");
             BackgroundImage?.Dispose();
             loadedImage?.Dispose();
-            logger.LogInformation("Disposed of Displayed Image.");
+            logger.LogInformation("Disposed of displayed image.");
 
             string[] pngFiles = Directory.GetFiles(FilePath.TempPath, "*.png");
 
             foreach (string filePath in pngFiles)
             {
-                if (IsFileInUse(filePath))
-                {
-                    logger.LogWarning($"Skipped file deletion due to being in use: {filePath}");
-                    continue;
-                }
-
                 try
                 {
+                    if (IsFileInUse(filePath))
+                    {
+                        logger.LogWarning($"Skipped file deletion due to being in use: {filePath}");
+                        continue;
+                    }
+
                     File.Delete(filePath);
                     logger.LogInformation($"Deleted file: {filePath}");
                 }
@@ -248,14 +223,15 @@ namespace AuraDDX.Viewer
                 }
             }
 
-            logger.LogInformation("Deletion of .png files in 'temp' directory completed.");
+            logger.LogInformation("Garbage collection completed.");
         }
 
-        /// <summary>
-        /// Checks if a file is in use by another process.
-        /// </summary>
-        /// <param name="filePath">The path to the file.</param>
-        /// <returns>True if the file is in use; otherwise, false.</returns>
+        private static bool IsSupportedExtension(string extension)
+        {
+            string[] supportedExtensions = { ".ddx", ".dds", ".png", ".jpg", ".jpeg", ".bmp", ".tiff" };
+            return supportedExtensions.Contains(extension);
+        }
+
         private static bool IsFileInUse(string filePath)
         {
             try
@@ -269,29 +245,80 @@ namespace AuraDDX.Viewer
             }
         }
 
-        /// <summary>
-        /// Opens a new image file.
-        /// </summary>
-        /// <param name="sender">The sender object.</param>
-        /// <param name="e">Event arguments.</param>
-        private async void OpenFile(object sender, EventArgs e)
+        private async void OpenFileAsync(object sender, EventArgs e)
         {
-            switch (OpenNewFile.ShowDialog())
+            using var openFileDialog = new OpenFileDialog();
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
-                case DialogResult.OK:
-                    await ProcessImage(OpenNewFile.FileName);
-                    PerformGarbageCollection();
-                    break;
-            }
+                string selectedFilePath = openFileDialog.FileName;
+                logger.LogInformation($"Selected file for opening: {selectedFilePath}");
 
-            OpenNewFile?.Dispose();
+                try
+                {
+                    await ProcessImageAsync(selectedFilePath, FileFormat.PNG);
+                    logger.LogInformation("Image processing completed successfully.");
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError($"Error processing image: {ex.Message}");
+                }
+            }
+            else
+            {
+                logger.LogInformation("File selection canceled.");
+            }
         }
 
-        private async void UpdateProgram(object sender, EventArgs e)
+        private async void UpdateProgramAsync(object sender, EventArgs e)
         {
-            if (github.IsConnectedToInternet())
+            try
             {
-                await github.DownloadAndExecuteLatestReleaseAsync(owner, repo, "setup.exe");
+                if (github.IsConnectedToInternet())
+                {
+                    logger.LogInformation("Checking for program updates...");
+                    await github.DownloadAndExecuteLatestReleaseAsync(owner, repo, "setup.exe");
+                    logger.LogInformation("Program update completed successfully.");
+                }
+                else
+                {
+                    logger.LogWarning("Unable to check for updates due to no internet connection.");
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"An error occurred while updating the program: {ex.Message}");
+            }
+        }
+
+        private void Viewer_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            logger.LogInformation("Viewer form closed.");
+
+            PerformGarbageCollection();
+
+            string texconvFilePath = Path.Combine(FilePath.TempPath, "texconv.exe");
+
+            try
+            {
+                if (File.Exists(texconvFilePath))
+                {
+                    File.Delete(texconvFilePath);
+                    logger.LogInformation($"Deleted file: {texconvFilePath}");
+                }
+                else
+                {
+                    logger.LogInformation($"File not found: {texconvFilePath}");
+                }
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                logger.LogError($"Unauthorized access when deleting file: {texconvFilePath}");
+                logger.LogError($"Exception: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"An error occurred while deleting file: {texconvFilePath}");
+                logger.LogError($"Exception: {ex.Message}");
             }
         }
     }

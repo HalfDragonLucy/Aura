@@ -36,9 +36,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\AuraDDX.Debugging\AuraDDX.Debugging.csproj" />
     <ProjectReference Include="..\AuraDDX.DirectX\AuraDDX.DirectX.csproj" />
-    <ProjectReference Include="..\AuraDDX.ExtensionManager\AuraDDX.Extension.csproj" />
     <ProjectReference Include="..\AuraDDX.Integrity\AuraDDX.Integrity.csproj" />
   </ItemGroup>
 
