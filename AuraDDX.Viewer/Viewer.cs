@@ -30,7 +30,7 @@ namespace AuraDDX.Viewer
             InitializeTexConv();
 
             CheckAndUpdate();
-            HandleArguments();
+            HandleArgumentsAsync();
         }
 
         private void InitializeVersionInfo()
@@ -93,34 +93,34 @@ namespace AuraDDX.Viewer
             BtnUpdate.Visible = false;
         }
 
-        private void HandleArguments()
+        private async Task HandleArgumentsAsync()
         {
             try
             {
                 var parser = new Parser(with => with.HelpWriter = null);
                 string[] args = Environment.GetCommandLineArgs().Skip(1).ToArray();
 
-                logger.LogInformation("Command-line arguments:");
+                logger.LogInformation($"Command-line arguments ({args.Length}):");
                 foreach (var arg in args)
                 {
                     logger.LogInformation(arg);
                 }
 
-                parser.ParseArguments<Options>(args)
-                    .WithParsed(options =>
+                var parseResult = await parser.ParseArguments<Options>(args).WithParsedAsync(async options =>
+                {
+                    if (options.ImageFilePath != null)
                     {
-                        if (options.ImageFilePath != null)
-                        {
-                            logger.LogInformation("Command-line argument 'ImageFilePath': " + options.ImageFilePath);
-                            ProcessImageAsync(options.ImageFilePath, FileFormat.PNG);
-                        }
-                    })
-                    .WithNotParsed(errors =>
-                    {
-                        HelpText helpText = HelpText.AutoBuild((ParserResult<Options>)errors);
-                        logger.LogError("Argument parsing error:");
-                        logger.LogError(helpText.ToString());
-                    });
+                        logger.LogInformation("Command-line argument 'ImageFilePath': " + options.ImageFilePath);
+                        await ProcessImageAsync(options.ImageFilePath, FileFormat.PNG);
+                    }
+                });
+
+                if (parseResult.Tag == ParserResultType.NotParsed)
+                {
+                    HelpText helpText = HelpText.AutoBuild(parseResult);
+                    logger.LogError("Argument parsing error:");
+                    logger.LogError(helpText.ToString());
+                }
             }
             catch (Exception ex)
             {
@@ -321,5 +321,47 @@ namespace AuraDDX.Viewer
                 logger.LogError($"Exception: {ex.Message}");
             }
         }
+
+        private async void SaveAsAsync(object sender, EventArgs e)
+        {
+            try
+            {
+                if (loadedImage != null)
+                {
+                    if (SaveNewFile.ShowDialog() == DialogResult.OK)
+                    {
+                        if (!string.IsNullOrEmpty(SaveNewFile.FileName))
+                        {
+                            string targetFilePath = SaveNewFile.FileName;
+                            string targetExtension = Path.GetExtension(targetFilePath).ToLower();
+
+                            if (!IsSupportedExtension(targetExtension))
+                            {
+                                logger.LogError("Unsupported file extension or target format.");
+                                return;
+                            }
+
+                            string selectedDirectory = Path.GetDirectoryName(targetFilePath) ?? throw new InvalidOperationException("No directory provided.");
+                            FileFormat format = FileFormatExtensions.AsString(targetExtension);
+
+                            await texConv.ConvertToAsync(targetFilePath, selectedDirectory, format);
+                        }
+                        else
+                        {
+                            logger.LogError("No file name provided.");
+                        }
+                    }
+                }
+                else
+                {
+                    logger.LogError("No image loaded to save.");
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"An error occurred while saving the image: {ex.Message}");
+            }
+        }
+
     }
 }
