@@ -1,5 +1,6 @@
 ﻿using AuraDDX.Integrity;
 using System.Diagnostics;
+using System.Runtime.Serialization;
 
 namespace AuraDDX.DirectX
 {
@@ -27,10 +28,76 @@ namespace AuraDDX.DirectX
         void Initialize();
     }
 
+
     public enum FileFormat
     {
-        BMP, DDS, DDX, HDR, JPG, JPEG, PFM, PNG, PPM, TGA, TIF, TIFF, WMP
+        [EnumMember(Value = ".bmp")]
+        BMP,
+
+        [EnumMember(Value = ".dds")]
+        DDS,
+
+        [EnumMember(Value = ".ddx")]
+        DDX,
+
+        [EnumMember(Value = ".hdr")]
+        HDR,
+
+        [EnumMember(Value = ".jpg")]
+        JPG,
+
+        [EnumMember(Value = ".jpeg")]
+        JPEG,
+
+        [EnumMember(Value = ".pfm")]
+        PFM,
+
+        [EnumMember(Value = ".png")]
+        PNG,
+
+        [EnumMember(Value = ".ppm")]
+        PPM,
+
+        [EnumMember(Value = ".tga")]
+        TGA,
+
+        [EnumMember(Value = ".tif")]
+        TIF,
+
+        [EnumMember(Value = ".tiff")]
+        TIFF,
+
+        [EnumMember(Value = ".wmp")]
+        WMP
     }
+
+    public static class FileFormatExtensions
+    {
+        public static FileFormat AsString(string value)
+        {
+            foreach (FileFormat format in Enum.GetValues(typeof(FileFormat)))
+            {
+                if (string.Equals(value, format.GetEnumMemberValue(), StringComparison.OrdinalIgnoreCase))
+                {
+                    return format;
+                }
+            }
+
+            throw new ArgumentException($"Invalid FileFormat: {value}");
+        }
+
+        private static string GetEnumMemberValue(this FileFormat format)
+        {
+            var memberInfo = format.GetType().GetMember(format.ToString());
+            var enumMemberAttribute = memberInfo.Length > 0 ?
+                memberInfo[0].GetCustomAttributes(typeof(EnumMemberAttribute), false).FirstOrDefault() as EnumMemberAttribute : null;
+
+            return enumMemberAttribute == null
+                ? throw new InvalidOperationException($"Enum value {format} does not have an EnumMemberAttribute.")
+                : enumMemberAttribute.Value ?? throw new InvalidOperationException($"Enum value {format} has a null EnumMemberAttribute value.");
+        }
+    }
+
 
     public class TexConv : ITexConv
     {
