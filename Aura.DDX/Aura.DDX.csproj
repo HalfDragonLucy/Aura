@@ -4,7 +4,6 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <NoWin32Manifest>true</NoWin32Manifest>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -14,9 +13,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DebugType>embedded</DebugType>
   </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\AuraDDX.Integrity\AuraDDX.Integrity.csproj" />
-  </ItemGroup>
+	
+	<PropertyGroup>
+		<CurrentDate>$([System.DateTime]::Now.ToString('yyyy.M.d'))</CurrentDate>
+		<VersionPrefix Condition="'$(VersionPrefix)' == ''">$(CurrentDate)</VersionPrefix>
+	</PropertyGroup>
 
 </Project>
