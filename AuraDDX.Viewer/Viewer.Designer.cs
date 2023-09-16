@@ -28,16 +28,19 @@
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Viewer));
             OpenNewFile = new OpenFileDialog();
             Menu = new ToolStrip();
             toolStripDropDownButton1 = new ToolStripDropDownButton();
             openToolStripMenuItem = new ToolStripMenuItem();
-            saveAsToolStripMenuItem = new ToolStripMenuItem();
+            SaveAsMenu = new ToolStripMenuItem();
+            pNGToolStripMenuItem = new ToolStripMenuItem();
             BtnUpdate = new ToolStripButton();
             CurrentVersion = new ToolStripLabel();
             ImageDisplay = new PictureBox();
-            SaveNewFile = new SaveFileDialog();
+            MenuTimer = new System.Windows.Forms.Timer(components);
+            dDXToolStripMenuItem = new ToolStripMenuItem();
             Menu.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)ImageDisplay).BeginInit();
             SuspendLayout();
@@ -63,7 +66,7 @@
             // 
             toolStripDropDownButton1.BackgroundImageLayout = ImageLayout.None;
             toolStripDropDownButton1.DisplayStyle = ToolStripItemDisplayStyle.Image;
-            toolStripDropDownButton1.DropDownItems.AddRange(new ToolStripItem[] { openToolStripMenuItem, saveAsToolStripMenuItem });
+            toolStripDropDownButton1.DropDownItems.AddRange(new ToolStripItem[] { openToolStripMenuItem, SaveAsMenu });
             toolStripDropDownButton1.Image = Properties.Resources.Document;
             toolStripDropDownButton1.ImageTransparentColor = Color.Magenta;
             toolStripDropDownButton1.Name = "toolStripDropDownButton1";
@@ -73,17 +76,26 @@
             // 
             openToolStripMenuItem.Image = Properties.Resources.OpenFile;
             openToolStripMenuItem.Name = "openToolStripMenuItem";
-            openToolStripMenuItem.Size = new Size(134, 26);
+            openToolStripMenuItem.Size = new Size(180, 26);
             openToolStripMenuItem.Text = "Open";
             openToolStripMenuItem.Click += OpenFileAsync;
             // 
-            // saveAsToolStripMenuItem
+            // SaveAsMenu
             // 
-            saveAsToolStripMenuItem.Image = Properties.Resources.SaveAs;
-            saveAsToolStripMenuItem.Name = "saveAsToolStripMenuItem";
-            saveAsToolStripMenuItem.Size = new Size(134, 26);
-            saveAsToolStripMenuItem.Text = "Save As";
-            saveAsToolStripMenuItem.Click += SaveAsAsync;
+            SaveAsMenu.DropDownItems.AddRange(new ToolStripItem[] { pNGToolStripMenuItem, dDXToolStripMenuItem });
+            SaveAsMenu.Enabled = false;
+            SaveAsMenu.Image = Properties.Resources.SaveAs;
+            SaveAsMenu.Name = "SaveAsMenu";
+            SaveAsMenu.Size = new Size(180, 26);
+            SaveAsMenu.Text = "Save As";
+            SaveAsMenu.TextImageRelation = TextImageRelation.TextAboveImage;
+            // 
+            // pNGToolStripMenuItem
+            // 
+            pNGToolStripMenuItem.Name = "pNGToolStripMenuItem";
+            pNGToolStripMenuItem.Size = new Size(180, 26);
+            pNGToolStripMenuItem.Text = "PNG";
+            pNGToolStripMenuItem.Click += SaveAsPNG;
             // 
             // BtnUpdate
             // 
@@ -118,12 +130,17 @@
             ImageDisplay.TabIndex = 2;
             ImageDisplay.TabStop = false;
             // 
-            // SaveNewFile
+            // MenuTimer
             // 
-            SaveNewFile.CheckFileExists = true;
-            SaveNewFile.Filter = "Image Files (*.bmp, *.jpg, *.jpeg, *.png,  *.tiff, *.ddx, *.dds)|*.bmp;*.jpg;*.jpeg;*.png;* .tiff;*.ddx; *.dds|All Files (*.*)|*.*\"";
-            SaveNewFile.RestoreDirectory = true;
-            SaveNewFile.ValidateNames = false;
+            MenuTimer.Enabled = true;
+            MenuTimer.Tick += MenuTimer_Tick;
+            // 
+            // dDXToolStripMenuItem
+            // 
+            dDXToolStripMenuItem.Name = "dDXToolStripMenuItem";
+            dDXToolStripMenuItem.Size = new Size(180, 26);
+            dDXToolStripMenuItem.Text = "DDX";
+            dDXToolStripMenuItem.Click += SaveAsDDX;
             // 
             // Viewer
             // 
@@ -155,7 +172,9 @@
         private ToolStripLabel CurrentVersion;
         private ToolStripButton BtnUpdate;
         private PictureBox ImageDisplay;
-        private ToolStripMenuItem saveAsToolStripMenuItem;
-        private SaveFileDialog SaveNewFile;
+        private ToolStripMenuItem SaveAsMenu;
+        private ToolStripMenuItem pNGToolStripMenuItem;
+        private System.Windows.Forms.Timer MenuTimer;
+        private ToolStripMenuItem dDXToolStripMenuItem;
     }
 }

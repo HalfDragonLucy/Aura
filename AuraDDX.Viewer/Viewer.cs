@@ -1,11 +1,20 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 using AuraDDX.Debugging;
 using AuraDDX.DirectX;
 using AuraDDX.Integrity;
 using CommandLine;
 using CommandLine.Text;
+using ImageMagick;
 
 namespace AuraDDX.Viewer
 {
+    /// <summary>
+    /// The main viewer application class.
+    /// </summary>
     public partial class Viewer : Form
     {
         private const string owner = "HalfDragonLucy";
@@ -14,14 +23,20 @@ namespace AuraDDX.Viewer
         private static readonly ITexConv texConv = new TexConv();
         private readonly ILogging logger = new Logging("AuraDDX", FilePath.LogsPath);
         private readonly IGithub github = new Github(new Octokit.GitHubClient(new Octokit.ProductHeaderValue("AuraDDX")));
-        private static Image? loadedImage;
+        private static string? loadedImage;
 
+        /// <summary>
+        /// Command-line options for the viewer.
+        /// </summary>
         public class Options
         {
             [Value(0, MetaName = "imageFilePath", Required = false, HelpText = "Path to the image file to process.")]
             public string? ImageFilePath { get; set; }
         }
 
+        /// <summary>
+        /// Initializes the viewer.
+        /// </summary>
         public Viewer()
         {
             InitializeComponent();
@@ -144,10 +159,8 @@ namespace AuraDDX.Viewer
 
                 if (!IsSupportedExtension(sourceExtension) || !IsSupportedExtension(_targetExtension))
                 {
-                    logger.LogError("Unsupported file extension or target format.");
-                    logger.LogError($"Code: {ExitCode.UnsupportedFormat}");
-                    Environment.Exit(ExitCode.UnsupportedFormat);
-                    throw new ArgumentException("Please provide a valid supported picture path argument.");
+                    HandleUnsupportedFormatError();
+                    return;
                 }
 
                 logger.LogInformation("Starting image conversion...");
@@ -160,11 +173,24 @@ namespace AuraDDX.Viewer
             }
             catch (Exception ex)
             {
-                logger.LogError($"An error occurred while converting the picture: {ex.Message}");
-                logger.LogError($"Code: {ExitCode.ConversionError}");
-                Environment.Exit(ExitCode.ConversionError);
-                throw new Exception($"An error occurred while converting the picture: {ex.Message}");
+                HandleConversionError(ex);
             }
+        }
+
+        private void HandleUnsupportedFormatError()
+        {
+            logger.LogError("Unsupported file extension or target format.");
+            logger.LogError($"Code: {ExitCode.UnsupportedFormat}");
+            Environment.Exit(ExitCode.UnsupportedFormat);
+            throw new ArgumentException("Please provide a valid supported picture path argument.");
+        }
+
+        private void HandleConversionError(Exception ex)
+        {
+            logger.LogError($"An error occurred while converting the picture: {ex.Message}");
+            logger.LogError($"Code: {ExitCode.ConversionError}");
+            Environment.Exit(ExitCode.ConversionError);
+            throw new Exception($"An error occurred while converting the picture: {ex.Message}");
         }
 
         private void LoadAndDisplayImage(string imgPath)
@@ -175,8 +201,8 @@ namespace AuraDDX.Viewer
 
                 using (var imageStream = File.OpenRead(imgPath))
                 {
-                    loadedImage = Image.FromStream(imageStream);
-                    ImageDisplay.Image = loadedImage;
+                    loadedImage = imgPath;
+                    ImageDisplay.Image = Image.FromStream(imageStream);
                 }
 
                 logger.LogInformation("Image displayed successfully.");
@@ -187,43 +213,35 @@ namespace AuraDDX.Viewer
             }
         }
 
-        public void PerformGarbageCollection()
+        private async void UpdateProgramAsync(object sender, EventArgs e)
         {
-            logger.LogInformation("Performing garbage collection...");
-
-            logger.LogInformation("Disposing of displayed image...");
-            BackgroundImage?.Dispose();
-            loadedImage?.Dispose();
-            logger.LogInformation("Disposed of displayed image.");
-
-            string[] pngFiles = Directory.GetFiles(FilePath.TempPath, "*.png");
-
-            foreach (string filePath in pngFiles)
+            try
             {
-                try
+                if (github.IsConnectedToInternet())
                 {
-                    if (IsFileInUse(filePath))
-                    {
-                        logger.LogWarning($"Skipped file deletion due to being in use: {filePath}");
-                        continue;
-                    }
-
-                    File.Delete(filePath);
-                    logger.LogInformation($"Deleted file: {filePath}");
+                    logger.LogInformation("Checking for program updates...");
+                    await github.DownloadAndExecuteLatestReleaseAsync(owner, repo, "setup.exe");
+                    logger.LogInformation("Program update completed successfully.");
                 }
-                catch (UnauthorizedAccessException ex)
+                else
                 {
-                    logger.LogError($"Unauthorized access when deleting file: {filePath}");
-                    logger.LogError($"Exception: {ex.Message}");
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError($"An error occurred while deleting file: {filePath}");
-                    logger.LogError($"Exception: {ex.Message}");
+                    HandleNoInternetConnection();
                 }
             }
+            catch (Exception ex)
+            {
+                HandleUpdateError(ex);
+            }
+        }
 
-            logger.LogInformation("Garbage collection completed.");
+        private void HandleNoInternetConnection()
+        {
+            logger.LogWarning("Unable to check for updates due to no internet connection.");
+        }
+
+        private void HandleUpdateError(Exception ex)
+        {
+            logger.LogError($"An error occurred while updating the program: {ex.Message}");
         }
 
         private static bool IsSupportedExtension(string extension)
@@ -269,25 +287,42 @@ namespace AuraDDX.Viewer
             }
         }
 
-        private async void UpdateProgramAsync(object sender, EventArgs e)
+        public void PerformGarbageCollection()
         {
-            try
+            logger.LogInformation("Performing garbage collection...");
+
+            logger.LogInformation("Disposing of displayed image...");
+            ImageDisplay.Image?.Dispose();
+            logger.LogInformation("Disposed of displayed image.");
+
+            string[] pngFiles = Directory.GetFiles(FilePath.TempPath, "*.png");
+
+            foreach (string filePath in pngFiles)
             {
-                if (github.IsConnectedToInternet())
+                try
                 {
-                    logger.LogInformation("Checking for program updates...");
-                    await github.DownloadAndExecuteLatestReleaseAsync(owner, repo, "setup.exe");
-                    logger.LogInformation("Program update completed successfully.");
+                    if (IsFileInUse(filePath))
+                    {
+                        logger.LogWarning($"Skipped file deletion due to being in use: {filePath}");
+                        continue;
+                    }
+
+                    File.Delete(filePath);
+                    logger.LogInformation($"Deleted file: {filePath}");
                 }
-                else
+                catch (UnauthorizedAccessException ex)
                 {
-                    logger.LogWarning("Unable to check for updates due to no internet connection.");
+                    logger.LogError($"Unauthorized access when deleting file: {filePath}");
+                    logger.LogError($"Exception: {ex.Message}");
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError($"An error occurred while deleting file: {filePath}");
+                    logger.LogError($"Exception: {ex.Message}");
                 }
             }
-            catch (Exception ex)
-            {
-                logger.LogError($"An error occurred while updating the program: {ex.Message}");
-            }
+
+            logger.LogInformation("Garbage collection completed.");
         }
 
         private void Viewer_FormClosed(object sender, FormClosedEventArgs e)
@@ -322,46 +357,57 @@ namespace AuraDDX.Viewer
             }
         }
 
-        private async void SaveAsAsync(object sender, EventArgs e)
+        private void MenuTimer_Tick(object sender, EventArgs e)
+        {
+            SaveAsMenu.Enabled = loadedImage != null;
+        }
+
+        private void SaveAsPNG(object sender, EventArgs e)
         {
             try
             {
-                if (loadedImage != null)
+                using SaveFileDialog saveFileDialog = new();
+                saveFileDialog.Filter = "PNG Files|*.png";
+                saveFileDialog.Title = "Save As PNG";
+
+                if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    if (SaveNewFile.ShowDialog() == DialogResult.OK)
+                    using (MagickImage image = new(loadedImage))
                     {
-                        if (!string.IsNullOrEmpty(SaveNewFile.FileName))
-                        {
-                            string targetFilePath = SaveNewFile.FileName;
-                            string targetExtension = Path.GetExtension(targetFilePath).ToLower();
-
-                            if (!IsSupportedExtension(targetExtension))
-                            {
-                                logger.LogError("Unsupported file extension or target format.");
-                                return;
-                            }
-
-                            string selectedDirectory = Path.GetDirectoryName(targetFilePath) ?? throw new InvalidOperationException("No directory provided.");
-                            FileFormat format = FileFormatExtensions.AsString(targetExtension);
-
-                            await texConv.ConvertToAsync(targetFilePath, selectedDirectory, format);
-                        }
-                        else
-                        {
-                            logger.LogError("No file name provided.");
-                        }
+                        image.Quality = 50;
+                        image.Write(saveFileDialog.FileName);
                     }
-                }
-                else
-                {
-                    logger.LogError("No image loaded to save.");
+
+                    logger.LogInformation("Image saved as PNG successfully.");
                 }
             }
             catch (Exception ex)
             {
-                logger.LogError($"An error occurred while saving the image: {ex.Message}");
+                logger.LogError($"An error occurred: {ex.Message}");
             }
         }
 
+        private void SaveAsDDX(object sender, EventArgs e)
+        {
+            try
+            {
+                using SaveFileDialog saveFileDialog = new();
+                saveFileDialog.Filter = "DDX Files|*.ddx";
+                saveFileDialog.Title = "Save As DDX";
+
+                if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    using MagickImage image = new(loadedImage);
+                    image.Format = MagickFormat.Dds;
+                    image.Write(Path.ChangeExtension(saveFileDialog.FileName, ".ddx"));
+                }
+
+                Console.WriteLine("DDS file saved successfully.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+            }
+        }
     }
 }
