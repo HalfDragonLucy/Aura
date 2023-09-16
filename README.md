@@ -1,7 +1,7 @@
-h1 align="center">Aura</h1>
+<h1 align="center">Aura</h1>
 
 <p align="center">
-  <img src="https://github.com/HalfDragonLucy/Aura/blob/master/fav.png?raw=true" alt="Aura Logo">
+  <img src="https://github.com/HalfDragonLucy/Aura/blob/master/Resources/aura.png" alt="Aura Logo">
 </p>
 
 <p align="center">
