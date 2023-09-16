@@ -37,6 +37,7 @@
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="13.2.0" />
   </ItemGroup>
 
   <ItemGroup>
