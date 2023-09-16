@@ -1,4 +1,4 @@
-h1 align="center">AuraDDX</h1>
+h1 align="center">Aura</h1>
 
 <p align="center">
   <img src="https://github.com/HalfDragonLucy/Aura/blob/master/fav.png?raw=true" alt="Aura Logo">
