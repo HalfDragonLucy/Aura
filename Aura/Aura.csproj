@@ -1,0 +1,61 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ErrorReport>none</ErrorReport>
+	<Optimize>true</Optimize>
+	  <ApplicationIcon>Resources\aura.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>none</DebugType>
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DebugType>none</DebugType>
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\aura.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\aura.ico">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>	
+
+  <ItemGroup>
+    <ProjectReference Include="..\Aura.AHP\Aura.AHP.csproj" />
+    <ProjectReference Include="..\Aura.AMC\Aura.AMC.csproj" />
+    <ProjectReference Include="..\Aura.DDX\Aura.DDX.csproj" />
+    <ProjectReference Include="..\Aura.ERA\Aura.ERA.csproj" />
+    <ProjectReference Include="..\Aura.XMB\Aura.XMB.csproj" />
+  </ItemGroup>	
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>	
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+	<PropertyGroup>
+		<CurrentDate>$([System.DateTime]::Now.ToString('yyyy.M.d'))</CurrentDate>
+		<VersionPrefix Condition="'$(VersionPrefix)' == ''">$(CurrentDate)</VersionPrefix>
+	</PropertyGroup>
+</Project>
